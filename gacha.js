@@ -203,7 +203,8 @@
   // 老存档迁移：没有 trainer 就补一个未注册的；已有的缺字段补默认值、坏值夹回合法范围，
   // 已有的名字/等级/结晶/糖果/道具一律保留，不补发经验和结晶。
   function ensureTrainer(state) {
-    state.version = 2; // F4：迁移过的存档也打上 version 标记（之前只有 newState 带 version）
+    // N1：只修缺失/坏掉/小于 2 的 version，不降级未来更高的版本
+    if (typeof state.version !== "number" || !isFinite(state.version) || state.version < 2) state.version = 2;
     var t = state.trainer;
     // F1：数组也是 typeof "object"，但 JSON.stringify 会丢掉数组上的具名属性，
     // 存档会被悄悄清空，所以数组直接当损坏处理
@@ -233,6 +234,8 @@
       else t.items[id] = Math.floor(t.items[id]);
     });
     if (typeof t.registered !== "boolean") t.registered = t.name !== "";
+    // N2：已注册必然有名字；没名字的存档不能算已注册（注册流程会同时填名字和置 true）
+    if (!t.name) t.registered = false;
     // F3：非布尔的旧标记按真值折算，不直接重置为 false（否则已发过的奖励会被重复发）
     if (typeof t.welcomeCrystalsGranted !== "boolean") t.welcomeCrystalsGranted = !!t.welcomeCrystalsGranted;
     return t;

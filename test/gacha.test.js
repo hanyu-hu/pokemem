@@ -202,6 +202,22 @@ check("已发标记为 1 时不再重复发", Gacha.grantWelcomeCrystals(flagSta
 const mig = { packs: 5, collection: {} };
 Gacha.ensureTrainer(mig);
 check("迁移的存档 version 也是 2", mig.version === 2);
+// N1：未来更高的 version 不能被降级；坏的 version 修回 2
+const future = { version: 3, packs: 1, collection: {} };
+Gacha.ensureTrainer(future);
+check("version 3 不会被降级成 2", future.version === 3);
+const badVer = { version: NaN, packs: 1, collection: {} };
+Gacha.ensureTrainer(badVer);
+check("version 为 NaN 修回 2", badVer.version === 2);
+// N2：没名字的训练师不能算已注册；有名字的保持已注册
+const noName = Gacha.newState(0);
+noName.trainer.registered = true; noName.trainer.name = "";
+Gacha.ensureTrainer(noName);
+check("registered=true 但没名字 → 改回未注册", noName.trainer.registered === false);
+const named = Gacha.newState(0);
+named.trainer.registered = true; named.trainer.name = "小智";
+Gacha.ensureTrainer(named);
+check("有名字的已注册保持不变", named.trainer.registered === true && named.trainer.name === "小智");
 const fresh = Gacha.newState(0);
 check("新用户注册奖励第一次 +100", Gacha.grantWelcomeCrystals(fresh) === 100 && fresh.trainer.crystals === 100);
 check("新用户注册奖励第二次返回 0", Gacha.grantWelcomeCrystals(fresh) === 0 && fresh.trainer.crystals === 100);
