@@ -177,9 +177,12 @@ check("场景卡用 createElement 造按钮（测试桩能点）、未解锁灰�
 check("场景卡有名字、属性图标、野生起始等级、解锁条件",
   encUiJs.includes("sceneName") && encUiJs.includes("typeIconHtml") &&
   encUiJs.includes("encounterBaseLevel") && encUiJs.includes("encounterUnlock"));
-check("选队格子每张卡一个格子、显示 Lv/HP/攻击/亲密度",
-  encUiJs.includes('"team-cell"') && encUiJs.includes("affectionLevel") &&
-  encUiJs.includes("encounterAffection"));
+check("选队格子每种一个格子、格子上不显示数值（数值在悬停 tab 里选）",
+  encUiJs.includes('"team-cell"') && encUiJs.includes("每种一个格子") &&
+  !encUiJs.includes('"team-stat"') && !encUiJs.includes('"team-affection"') &&
+  encUiJs.includes("encounterAffection")); // tab 里仍显示亲密度
+check("点格子默认上该种最高等级的卡、再点取消",
+  encUiJs.includes("toggleSpecies") && encUiJs.includes("等级最高的卡"));
 check("选队最多 6 张、超了弹提示",
   encUiJs.includes("picks.length >= 6") && encUiJs.includes("encounterTeamFull"));
 check("开始按钮没选队时禁用、开始后记进 ctx.encounter",
@@ -197,6 +200,17 @@ check("选队标题下面有 6 个精灵球槽、悬停选卡 tab 容器",
 check("精灵球开合样式（空球关着、选了打开、宝可梦放进去）",
   css.includes(".team-balls") && css.includes(".team-ball") && css.includes(".team-ball.open .ball-top") &&
   css.includes(".team-ball .ball-mon") && css.includes(".team-ball.open .ball-mon"));
+check("精灵球是摆件造型（球盖掀到宝可梦身后上方、宝可梦站在球上）",
+  css.includes("rotate(-28deg)") && css.includes(".team-ball.open .ball-top") &&
+  css.includes("bottom: 30px"));
+check("出征按钮在精灵球下面、底部的开始按钮也改叫出征",
+  html.includes('id="encounter-deploy-btn"') && html.includes('id="team-balls"') &&
+  html.indexOf('id="team-balls"') < html.indexOf('id="encounter-deploy-btn"') &&
+  fs.readFileSync(__dirname + "/../i18n.js", "utf8").includes('encounterStartBtn: "出征"'));
+check("两个出征按钮都接同一个开始动作、没选队时都禁用",
+  encUiJs.includes('encounter-deploy-btn') && encUiJs.includes('encounter-start-btn') &&
+  encUiJs.includes('$("encounter-deploy-btn").addEventListener("click", startRun)') &&
+  encUiJs.includes('$("encounter-deploy-btn").disabled = dis'));
 check("悬停选卡 tab 样式",
   css.includes(".team-pick-tab") && css.includes(".team-pick-opt") && css.includes(".team-pick-opt.selected"));
 check("同种只放一只：再点同种的另一张直接换过来",

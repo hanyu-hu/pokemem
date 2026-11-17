@@ -70,7 +70,7 @@
       list.appendChild(b);
     });
   }
-  // 选队格子：每张已有的卡一个格子（按编号、等级从高到低），显示 Lv / HP / 攻击 / 亲密度
+  // 选队格子：每种一个格子（只放形象和名字，Lv / HP / 攻击 / 亲密度不在格子上显示，在悬停 tab 里选）
   function renderTeam() {
     hidePickTab(); // 格子重绘后悬停 tab 的锚点就没了，先收起来
     var grid = $("team-grid");
@@ -78,48 +78,46 @@
     POKEDEX.forEach(function (row) {
       var e = ctx.state.collection[row[0]];
       if (!e || !e.cards || !e.cards.length) return;
-      e.cards.slice().sort(function (a, b) { return b.level - a.level; }).forEach(function (c) {
-        var idx = e.cards.indexOf(c);
-        var b = document.createElement("button");
-        b.classList.add("team-cell");
-        var sel = pickIndex(row[0], idx) >= 0;
-        if (sel) b.classList.add("selected");
-        b.setAttribute("data-species", row[0]);
-        b.setAttribute("data-card", idx);
-        var img = document.createElement("img");
-        img.src = imgUrl(row[0]);
-        img.alt = "";
-        img.onerror = function () { this.style.display = "none"; };
-        img.setAttribute("loading", "lazy");
-        b.appendChild(img);
-        var nm = document.createElement("div");
-        nm.className = "team-name";
-        nm.textContent = PokeMem.dexName(row);
-        b.appendChild(nm);
-        var st = document.createElement("div");
-        st.className = "team-stat";
-        st.textContent = "Lv." + c.level + "　HP " + c.hp + " · " + t("atkLabel") + " " + c.atk;
-        b.appendChild(st);
-        var af = document.createElement("div");
-        af.className = "team-affection";
-        af.textContent = t("encounterAffection", { level: CardProgress.affectionLevel(c.affection) });
-        b.appendChild(af);
-        var chk = document.createElement("span");
-        chk.className = "team-check";
-        chk.textContent = sel ? "✓" : "";
-        b.appendChild(chk);
-        b.addEventListener("click", function () { togglePick(row[0], idx); });
-        b.addEventListener("mouseenter", function () { showPickTab(row[0], b); });
-        b.addEventListener("mouseleave", function (ev) {
-          var tab = $("team-pick-tab");
-          if (ev && ev.relatedTarget && tab.contains && tab.contains(ev.relatedTarget)) return; // 移进 tab 里别收
-          hidePickTab();
-        });
-        grid.appendChild(b);
+      var picked = null;
+      for (var i = 0; i < teamPicks().length; i++) if (teamPicks()[i].speciesId === row[0]) { picked = teamPicks()[i]; break; }
+      var b = document.createElement("button");
+      b.classList.add("team-cell");
+      if (picked) b.classList.add("selected");
+      b.setAttribute("data-species", row[0]);
+      var img = document.createElement("img");
+      img.src = imgUrl(row[0]);
+      img.alt = "";
+      img.onerror = function () { this.style.display = "none"; };
+      img.setAttribute("loading", "lazy");
+      b.appendChild(img);
+      var nm = document.createElement("div");
+      nm.className = "team-name";
+      nm.textContent = PokeMem.dexName(row);
+      b.appendChild(nm);
+      var chk = document.createElement("span");
+      chk.className = "team-check";
+      chk.textContent = picked ? "✓" : "";
+      b.appendChild(chk);
+      b.addEventListener("click", function () { toggleSpecies(row[0]); });
+      b.addEventListener("mouseenter", function () { showPickTab(row[0], b); });
+      b.addEventListener("mouseleave", function (ev) {
+        var tab = $("team-pick-tab");
+        if (ev && ev.relatedTarget && tab.contains && tab.contains(ev.relatedTarget)) return; // 移进 tab 里别收
+        hidePickTab();
       });
+      grid.appendChild(b);
     });
     renderTeamBalls();
     $("team-pick-count").textContent = t("encounterTeamCount", { n: teamPicks().length });
+  }
+  // 点格子 = 整个种开关：已选就取消，没选就上该种等级最高的卡（想换低等级的去 tab 里点）
+  function toggleSpecies(speciesId) {
+    var picks = teamPicks();
+    for (var i = 0; i < picks.length; i++) if (picks[i].speciesId === speciesId) { togglePick(speciesId, picks[i].cardIndex); return; }
+    var e = ctx.state.collection[speciesId];
+    var best = 0;
+    for (var j = 1; j < e.cards.length; j++) if (e.cards[j].level > e.cards[best].level) best = j;
+    togglePick(speciesId, best);
   }
   // 队伍精灵球：6 个槽；空球关着，选了的球打开、宝可梦放进去；点已选的取消
   function renderTeamBalls() {
@@ -203,7 +201,9 @@
     updateStartBtn();
   }
   function updateStartBtn() {
-    $("encounter-start-btn").disabled = teamPicks().length < 1;
+    var dis = teamPicks().length < 1;
+    $("encounter-start-btn").disabled = dis;
+    $("encounter-deploy-btn").disabled = dis;
   }
   // 开始：建一场遭遇战、记在 ctx.encounter 里（Task 28 的战斗屏接手）；开场不写存档
   function startRun() {
@@ -237,6 +237,7 @@
   PokeMem.renderEncounter = renderEncounter;
 
   $("encounter-start-btn").addEventListener("click", startRun);
+  $("encounter-deploy-btn").addEventListener("click", startRun);
   $("encounter-abandon-btn").addEventListener("click", abandonRun);
   $("team-pick-tab").addEventListener("mouseleave", hidePickTab);
 })();
