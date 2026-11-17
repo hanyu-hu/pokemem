@@ -2,7 +2,7 @@
 // 复现用户截图里的情况：小火龙 #004 共 8 张，但存档是 v1.5 之前的——
 // 只有总数和最高数值（Lv94 / HP264 / 攻击190），没有每张卡的明细。
 // 跑真实的 app.js 启动流程后，点开它，详情页应该有 5 个 tab（Lv 最高的 5 张），
-// 且注明其中 7 张是补生成的。
+// 且注明其中 4 张是补生成的（7 张里 3 张被上限去掉）、已去掉 3 张。
 const fs = require("fs");
 const vm = require("vm");
 
@@ -62,14 +62,16 @@ check("小火龙详情有 5 个 tab", tabCount === 5, "实际 " + tabCount + " �
 check("Lv94 那张在 tab 里（原最高等级保留）", html.includes("Lv.94"));
 const tabLevels = [...html.matchAll(/Lv\.(\d+)/g)].map(m => parseInt(m[1], 10));
 check("tab 的 Lv 都不超过 94", tabLevels.every(lv => lv <= 94), "tab Lv: " + tabLevels.join(","));
-check("超 5 张提示出现（共 8 张）", html.includes("只显示 Lv 最高的 5 张（共 8 张）"));
-check("注明 7 张是补生成的", html.includes("其中 7 张旧卡数值是补生成的"));
+check("上限提示出现（超过 5 张会被去掉）", html.includes("每只宝可梦最多保留 5 张卡"));
+check("注明已去掉 3 张", html.includes("已去掉 3 张"));
+check("注明 4 张是补生成的（7 张里 3 张被上限去掉）", html.includes("其中 4 张旧卡数值是补生成的"));
 check("不再显示旧卡无明细的提示", !html.includes("无单独数值"));
 
-// 存档本身也被修好了：8 张都有明细，legacy 清零
+// 存档本身也被修好了：上限执行后只剩 5 条明细，legacy 清零
 const saved = JSON.parse(sandbox.localStorage.getItem("pokemem-save-v1"));
-check("存档里小火龙已有 8 条明细", saved.collection[4].cards.length === 8);
+check("存档里小火龙只剩 5 条明细", saved.collection[4].cards.length === 5);
 check("存档 legacy 已清零", saved.collection[4].legacy === 0);
+check("存档记了去掉 3 张", saved.collection[4].droppedCount === 3);
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);

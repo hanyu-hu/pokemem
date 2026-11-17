@@ -217,14 +217,15 @@
       '<div class="detail-body"><div class="card-tabs">' +
       top.map(function (c, i) {
         return '<button class="card-tab' + (c === detailSelected ? " active" : "") + '" data-i="' + i + '">' +
-          "<b>Lv." + c.level + "</b><span>HP " + c.hp + " · " + t("atkLabel") + " " + c.atk + "</span></button>";
+          "Lv." + c.level + "　HP " + c.hp + " · " + t("atkLabel") + " " + c.atk + "</button>";
       }).join("") + "</div>" +
       '<div class="card-detail">' +
       '<div class="cd-stat"><span>Lv</span><b>' + detailSelected.level + "</b></div>" +
       '<div class="cd-stat"><span>HP</span><b>' + detailSelected.hp + "</b></div>" +
       '<div class="cd-stat"><span>' + t("atkLabel") + "</span><b>" + detailSelected.atk + "</b></div>" +
       "</div></div>";
-    if (owned.cards.length > 5) html += '<p class="rule">' + t("top5Note", { n: owned.cards.length }) + "</p>";
+    html += '<p class="rule">' + t("capNote") + "</p>";
+    if (owned.droppedCount > 0) html += '<p class="rule">' + t("droppedNote", { n: owned.droppedCount }) + "</p>";
     var repairedN = owned.cards.filter(function (c) { return c.repaired; }).length;
     if (repairedN > 0) html += '<p class="rule">' + t("repairedNote", { n: repairedN }) + "</p>";
     if (owned.legacy > 0) html += '<p class="rule">' + t("legacyNote", { n: owned.legacy }) + "</p>";
@@ -329,6 +330,7 @@
   // ---------- 启动 ----------
   Gacha.migrateCollection(state); // v1.5 前的旧存档只有汇总，补一条明细卡后保存
   Gacha.repairLegacyCards(state, Math.random); // v1.7：旧卡按公式补生成数值（原始数值已无法找回），只跑一次
+  Gacha.enforceCap(state); // v1.8：每只最多保留 5 张卡，超过的按 Lv 从低到高去掉
   save();
   applyLang();
   tick();
