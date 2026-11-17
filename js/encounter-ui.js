@@ -72,6 +72,7 @@
   }
   // 选队格子：每张已有的卡一个格子（按编号、等级从高到低），显示 Lv / HP / 攻击 / 亲密度
   function renderTeam() {
+    hidePickTab(); // 格子重绘后悬停 tab 的锚点就没了，先收起来
     var grid = $("team-grid");
     grid.innerHTML = "";
     POKEDEX.forEach(function (row) {
@@ -108,18 +109,95 @@
         chk.textContent = sel ? "✓" : "";
         b.appendChild(chk);
         b.addEventListener("click", function () { togglePick(row[0], idx); });
+        b.addEventListener("mouseenter", function () { showPickTab(row[0], b); });
+        b.addEventListener("mouseleave", function (ev) {
+          var tab = $("team-pick-tab");
+          if (ev && ev.relatedTarget && tab.contains && tab.contains(ev.relatedTarget)) return; // 移进 tab 里别收
+          hidePickTab();
+        });
         grid.appendChild(b);
       });
     });
+    renderTeamBalls();
     $("team-pick-count").textContent = t("encounterTeamCount", { n: teamPicks().length });
   }
+  // 队伍精灵球：6 个槽；空球关着，选了的球打开、宝可梦放进去；点已选的取消
+  function renderTeamBalls() {
+    var box = $("team-balls");
+    box.innerHTML = "";
+    var picks = teamPicks();
+    for (var i = 0; i < 6; i++) box.appendChild(makeBall(picks[i] || null));
+  }
+  function makeBall(p) {
+    var b = document.createElement("button");
+    b.classList.add("team-ball");
+    var top = document.createElement("span"); top.className = "ball-top"; b.appendChild(top);
+    var bot = document.createElement("span"); bot.className = "ball-bottom"; b.appendChild(bot);
+    var band = document.createElement("span"); band.className = "ball-band"; b.appendChild(band);
+    var btn = document.createElement("span"); btn.className = "ball-btn"; b.appendChild(btn);
+    if (p) {
+      b.classList.add("open");
+      var img = document.createElement("img");
+      img.className = "ball-mon";
+      img.src = imgUrl(p.speciesId);
+      img.alt = "";
+      b.appendChild(img);
+      var e = ctx.state.collection[p.speciesId];
+      var c = e && e.cards && e.cards[p.cardIndex];
+      var lv = document.createElement("span");
+      lv.className = "ball-lv";
+      lv.textContent = c ? "Lv." + c.level : "";
+      b.appendChild(lv);
+      b.title = t("encounterTeamBallRemove");
+      b.addEventListener("click", function () { togglePick(p.speciesId, p.cardIndex); });
+    }
+    return b;
+  }
+  // 悬停选卡 tab：鼠标移到格子上，右边浮出该种宝可梦的全部卡，点一只上场
+  function showPickTab(speciesId, cell) {
+    var tab = $("team-pick-tab");
+    tab.innerHTML = "";
+    var row = POKEDEX[speciesId - 1];
+    var e = ctx.state.collection[speciesId];
+    if (!row || !e || !e.cards || !e.cards.length) return;
+    var title = document.createElement("div");
+    title.className = "team-pick-title";
+    title.textContent = PokeMem.dexName(row) + " · " + t("encounterPickTitle");
+    tab.appendChild(title);
+    e.cards.slice().sort(function (a, b) { return b.level - a.level; }).forEach(function (c) {
+      var idx = e.cards.indexOf(c);
+      var sel = pickIndex(speciesId, idx) >= 0;
+      var b = document.createElement("button");
+      b.classList.add("team-pick-opt");
+      if (sel) b.classList.add("selected");
+      b.setAttribute("data-card", idx);
+      b.textContent = "Lv." + c.level + "　HP " + c.hp + " · " + t("atkLabel") + " " + c.atk +
+        "　" + t("encounterAffection", { level: CardProgress.affectionLevel(c.affection) }) + (sel ? "　✓" : "");
+      b.addEventListener("click", function () { togglePick(speciesId, idx); hidePickTab(); });
+      tab.appendChild(b);
+    });
+    // 定位：格子右边；靠右边缘时改放左边
+    var tabW = 220;
+    var left = (cell.offsetLeft || 0) + (cell.offsetWidth || 0) + 8;
+    var wrap = $("team-grid-wrap");
+    if (wrap && left + tabW > (wrap.offsetWidth || 0)) left = Math.max(0, (cell.offsetLeft || 0) - tabW - 8);
+    tab.style.left = left + "px";
+    tab.style.top = (cell.offsetTop || 0) + "px";
+    tab.style.display = "block";
+  }
+  function hidePickTab() { $("team-pick-tab").style.display = "none"; }
   function togglePick(speciesId, cardIndex) {
     var picks = teamPicks();
     var i = pickIndex(speciesId, cardIndex);
-    if (i >= 0) picks.splice(i, 1);
+    if (i >= 0) picks.splice(i, 1); // 点已选的 = 取消
     else {
-      if (picks.length >= 6) { PokeMem.showToast(t("encounterTeamFull")); return; }
-      picks.push({ speciesId: speciesId, cardIndex: cardIndex });
+      var same = -1;
+      for (var j = 0; j < picks.length; j++) if (picks[j].speciesId === speciesId) { same = j; break; }
+      if (same >= 0) picks[same] = { speciesId: speciesId, cardIndex: cardIndex }; // 同种只放一只：换成这张
+      else {
+        if (picks.length >= 6) { PokeMem.showToast(t("encounterTeamFull")); return; }
+        picks.push({ speciesId: speciesId, cardIndex: cardIndex });
+      }
     }
     renderTeam();
     updateStartBtn();
@@ -160,4 +238,5 @@
 
   $("encounter-start-btn").addEventListener("click", startRun);
   $("encounter-abandon-btn").addEventListener("click", abandonRun);
+  $("team-pick-tab").addEventListener("mouseleave", hidePickTab);
 })();

@@ -191,5 +191,23 @@ check("场景卡与选队格子有样式（选中红框、未解锁变暗）",
   css.includes(".scene-card") && css.includes(".scene-card.selected") && css.includes(".scene-card.locked") &&
   css.includes(".team-cell.selected"));
 
+// 选队改版：同种只放一只、悬停选哪一只上场、6 个精灵球
+check("选队标题下面有 6 个精灵球槽、悬停选卡 tab 容器",
+  html.includes('id="team-balls"') && html.includes('id="team-grid-wrap"') && html.includes('id="team-pick-tab"'));
+check("精灵球开合样式（空球关着、选了打开、宝可梦放进去）",
+  css.includes(".team-balls") && css.includes(".team-ball") && css.includes(".team-ball.open .ball-top") &&
+  css.includes(".team-ball .ball-mon") && css.includes(".team-ball.open .ball-mon"));
+check("悬停选卡 tab 样式",
+  css.includes(".team-pick-tab") && css.includes(".team-pick-opt") && css.includes(".team-pick-opt.selected"));
+check("同种只放一只：再点同种的另一张直接换过来",
+  encUiJs.includes("同种只放一只") && encUiJs.includes("picks[same] ="));
+check("悬停格子右边浮出该种的全部卡",
+  encUiJs.includes("showPickTab") && encUiJs.includes("mouseenter") && encUiJs.includes("encounterPickTitle"));
+check("点球取消选择",
+  encUiJs.includes("renderTeamBalls") && encUiJs.includes('"team-ball"') && encUiJs.includes("encounterTeamBallRemove"));
+check("选卡 tab 的文案有中英文",
+  fs.readFileSync(__dirname + "/../i18n.js", "utf8").includes("encounterPickTitle") &&
+  fs.readFileSync(__dirname + "/../i18n.js", "utf8").includes("encounterTeamBallRemove"));
+
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
