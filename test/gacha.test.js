@@ -266,5 +266,40 @@ check("35 结晶连兑 3 次：剩 5 结晶、包 +3",
 check("第 4 次余额不足拒绝",
   Gacha.exchangeCrystalsForPack(ex7, 1000000) === 0 && ex7.trainer.crystals === 5);
 
+// 14. 训练师经验结算（Task 6）：升级、奖励、满级
+const xp1 = Gacha.newState(0);
+const xr1 = Gacha.addTrainerExp(xp1, 43);
+check("43 经验：不升级、余 43", xr1.levels === 0 && xp1.trainer.level === 1 && xp1.trainer.exp === 43);
+const xr2 = Gacha.addTrainerExp(xp1, 60);
+check("再加 60：升 1 级余 3、+2 糖果", xr2.levels === 1 && xp1.trainer.level === 2 && xp1.trainer.exp === 3 && xp1.trainer.candy === 2);
+check("升级结果返回升了几级和糖果", xr2.candy === 2 && Object.keys(xr2.items).length === 0);
+const xp2 = Gacha.newState(0);
+const xr3 = Gacha.addTrainerExp(xp2, 250);
+check("250 经验：连升 2 级余 50、糖果 +4", xr3.levels === 2 && xp2.trainer.level === 3 && xp2.trainer.exp === 50 && xp2.trainer.candy === 4);
+const xp3 = Gacha.newState(0); xp3.trainer.level = 9; xp3.trainer.exp = 90;
+const xr4 = Gacha.addTrainerExp(xp3, 20);
+check("升到 10 级：里程碑给 3 超级球", xr4.levels === 1 && xp3.trainer.level === 10 && xr4.items.great_ball === 3 && xp3.trainer.items.great_ball === 3);
+const xp4 = Gacha.newState(0); xp4.trainer.level = 24; xp4.trainer.exp = 90;
+const xr5 = Gacha.addTrainerExp(xp4, 20);
+check("升到 25 级：里程碑给 3 高级球", xr5.items.ultra_ball === 3 && xp4.trainer.items.ultra_ball === 3);
+const xp8 = Gacha.newState(0); xp8.trainer.level = 9; xp8.trainer.exp = 0;
+const xr8 = Gacha.addTrainerExp(xp8, 250);
+check("9 级 +250：升到 11 级、10 级里程碑只给一次",
+  xr8.levels === 2 && xp8.trainer.level === 11 && xp8.trainer.items.great_ball === 3 && xp8.trainer.candy === 4);
+const xp5 = Gacha.newState(0); xp5.trainer.level = 100; xp5.trainer.exp = 0;
+const xr6 = Gacha.addTrainerExp(xp5, 500);
+check("满级加经验：等级/经验/糖果都不动", xr6.levels === 0 && xp5.trainer.level === 100 && xp5.trainer.exp === 0 && xp5.trainer.candy === 0);
+const xp6 = Gacha.newState(0); xp6.trainer.level = 99; xp6.trainer.exp = 90;
+const xr7 = Gacha.addTrainerExp(xp6, 50);
+check("99 级 +50：升到 100、溢出丢弃、经验归零", xr7.levels === 1 && xp6.trainer.level === 100 && xp6.trainer.exp === 0);
+const xp7 = Gacha.newState(0);
+check("负经验不动", Gacha.addTrainerExp(xp7, -10).levels === 0 && xp7.trainer.exp === 0);
+check("NaN 经验不动", Gacha.addTrainerExp(xp7, NaN).levels === 0 && xp7.trainer.exp === 0);
+check("经验表 N2/R4/SR8/SSR15/UR25/MR50",
+  Gacha.TRAINER_EXP_TABLE.N === 2 && Gacha.TRAINER_EXP_TABLE.R === 4 && Gacha.TRAINER_EXP_TABLE.SR === 8 &&
+  Gacha.TRAINER_EXP_TABLE.SSR === 15 && Gacha.TRAINER_EXP_TABLE.UR === 25 && Gacha.TRAINER_EXP_TABLE.MR === 50);
+const packExp = 10 * (0.4992 * 2 + 0.3003 * 4 + 0.1488 * 8 + 0.0405 * 15 + 0.0075 * 25 + 0.0026 * 50);
+check("一包期望经验约 43", Math.abs(packExp - 43) < 1, "算得 " + packExp.toFixed(1));
+
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
