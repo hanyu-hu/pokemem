@@ -97,6 +97,15 @@ button { font-family: inherit; }
   100% { transform: translateX(0) rotate(0deg) scale(1); box-shadow: 0 0 0 rgba(0,0,0,0); }
 }
 
+/* 详情页：单只宝可梦的全部卡 */
+.detail-cards-title { font-weight: bold; margin: 12px 0 6px; text-align: left; }
+.sort-row { display: flex; gap: 6px; align-items: center; justify-content: center; margin-bottom: 8px; font-size: 13px; }
+.sort-row button { padding: 4px 10px; border-radius: 12px; border: 1px solid #ccc; background: #fff; cursor: pointer; font-size: 13px; }
+.sort-row button.active { background: #e3350d; color: #fff; border-color: #e3350d; }
+.cards-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cards-table th, .cards-table td { padding: 5px 4px; border-bottom: 1px solid #eee; text-align: center; }
+.cards-table th { color: #888; font-size: 12px; }
+
 /* Debug */
 .debug-panel { background: #fff8d6; border: 2px dashed #d4a017; border-radius: 12px; padding: 12px; margin-top: 16px; }
 .debug-panel h3 { margin: 0 0 8px; font-size: 15px; }

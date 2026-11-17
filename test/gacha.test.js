@@ -85,5 +85,28 @@ check("开包后包数 0、总抽 10", s4.packs === 0 && s4.totalDraws === 10);
 check("卡册拥有数 = 包内去重数", Gacha.ownedCount(s4) === new Set(pack.map(c => c.id)).size);
 check("NEW 标记只给首次获得", pack.filter(c => c.isNew).length === new Set(pack.map(c => c.id)).size);
 
+// 8. 每张卡单独存明细：同一只抽到多张时，cards 里逐张都有等级/HP/攻击
+const s5 = Gacha.newState(0);
+const c1 = { id: 25, level: 76, hp: 240, atk: 198 };
+const c2 = { id: 25, level: 50, hp: 151, atk: 100 };
+Gacha.addToCollection(s5, c1);
+Gacha.addToCollection(s5, c2);
+const e25 = s5.collection[25];
+check("同一只 2 张，count=2、cards 长度 2", e25.count === 2 && e25.cards.length === 2);
+check("明细逐张保存", e25.cards[0].level === 76 && e25.cards[0].hp === 240 && e25.cards[1].level === 50 && e25.cards[1].atk === 100);
+check("best 取最高等级那张的数值", e25.bestLv === 76 && e25.bestHp === 240 && e25.bestAtk === 198);
+check("按 HP 排能分出先后", e25.cards.slice().sort((a, b) => b.hp - a.hp)[0].level === 76);
+check("按攻击排能分出先后", e25.cards.slice().sort((a, b) => b.atk - a.atk)[0].level === 76);
+
+// 9. 旧存档迁移：v1.5 前只有汇总的条目，补一条明细卡，余数记 legacy
+const s6 = Gacha.newState(0);
+s6.collection[4] = { count: 3, bestLv: 82, bestHp: 232, bestAtk: 166 };
+Gacha.migrateCollection(s6);
+const e4 = s6.collection[4];
+check("迁移后 count 不变", e4.count === 3);
+check("迁移补 1 条明细卡（最高数值）", e4.cards.length === 1 && e4.cards[0].level === 82 && e4.cards[0].hp === 232);
+check("迁移余 2 张记 legacy", e4.legacy === 2);
+check("迁移可重复跑（幂等）", (Gacha.migrateCollection(s6), e4.cards.length === 1 && e4.legacy === 2));
+
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);

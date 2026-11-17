@@ -41,6 +41,10 @@ check("app.js 有震动触发函数", app.includes("shakeIfSpecial"));
 check("震动只给 SSR/MR", app.includes('tier !== "SSR" && tier !== "MR"'));
 check("翻牌点击会震", app.includes("shakeIfSpecial(d, c.tier)"));
 check("全部翻开也会震", app.includes("shakeIfSpecial(el, el.dataset.tier)"));
+check("详情页有全部卡牌容器", fs.readFileSync(__dirname + "/../index.html", "utf8").includes('id="detail-cards"'));
+check("app.js 有详情卡牌列表渲染", app.includes("renderDetailCards"));
+check("app.js 有排序状态（Lv/HP/攻击）", app.includes('detailSort') && app.includes('"level"') && app.includes('"hp"') && app.includes('"atk"'));
+check("启动时迁移旧存档", app.includes("migrateCollection(state)"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);

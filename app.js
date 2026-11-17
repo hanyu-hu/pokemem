@@ -187,6 +187,8 @@
     var shown = grid.children.length;
     $("collection-summary").textContent = t("collectionSummary", { owned: Gacha.ownedCount(state), shown: shown });
   }
+  // ---------- 详情：列出该宝可梦的全部卡，可按 Lv / HP / 攻击排序 ----------
+  var detailSort = { key: "level", dir: "desc" }; // 排序状态在不同宝可梦之间保留
   function showDetail(r) {
     var owned = state.collection[r[0]];
     var primary = dexName(r), secondary = lang() === "en" ? r[1] : r[2];
@@ -197,7 +199,37 @@
     $("detail-owned").textContent = owned
       ? t("detailOwned", { n: owned.count, lv: owned.bestLv, hp: owned.bestHp, atk: owned.bestAtk })
       : t("detailMissing");
+    renderDetailCards(r, owned);
     $("detail-modal").classList.add("show");
+  }
+  function renderDetailCards(r, owned) {
+    var box = $("detail-cards");
+    if (!owned || !owned.cards || !owned.cards.length) { box.innerHTML = ""; return; }
+    var cards = owned.cards.slice();
+    var key = detailSort.key, dir = detailSort.dir;
+    cards.sort(function (a, b) { return dir === "desc" ? b[key] - a[key] : a[key] - b[key]; });
+    var html = '<p class="detail-cards-title">' + t("cardsTitle", { n: owned.count }) + "</p>" +
+      '<div class="sort-row"><span>' + t("sortLabel") + "：</span>" +
+      sortBtn("level", "Lv") + sortBtn("hp", "HP") + sortBtn("atk", t("atkLabel")) + "</div>" +
+      '<table class="cards-table"><thead><tr><th>#</th><th>Lv</th><th>HP</th><th>' + t("atkLabel") + "</th></tr></thead><tbody>";
+    cards.forEach(function (c, i) {
+      html += "<tr><td>" + (i + 1) + "</td><td>" + c.level + "</td><td>" + c.hp + "</td><td>" + c.atk + "</td></tr>";
+    });
+    html += "</tbody></table>";
+    if (owned.legacy > 0) html += '<p class="rule">' + t("legacyNote", { n: owned.legacy }) + "</p>";
+    box.innerHTML = html;
+    box.querySelectorAll("[data-sort]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var k = btn.getAttribute("data-sort");
+        if (detailSort.key === k) detailSort.dir = detailSort.dir === "desc" ? "asc" : "desc";
+        else { detailSort.key = k; detailSort.dir = "desc"; }
+        renderDetailCards(r, owned);
+      });
+    });
+  }
+  function sortBtn(key, label) {
+    var arrow = detailSort.key === key ? (detailSort.dir === "desc" ? " ▼" : " ▲") : "";
+    return '<button data-sort="' + key + '"' + (detailSort.key === key ? ' class="active"' : "") + ">" + label + arrow + "</button>";
   }
   $("detail-close").addEventListener("click", function () { $("detail-modal").classList.remove("show"); });
   $("detail-modal").addEventListener("click", function (e) { if (e.target === this) this.classList.remove("show"); });
@@ -278,6 +310,8 @@
   });
 
   // ---------- 启动 ----------
+  Gacha.migrateCollection(state); // v1.5 前的旧存档只有汇总，补一条明细卡后保存
+  save();
   applyLang();
   tick();
   setInterval(tick, 1000);

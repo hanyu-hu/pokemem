@@ -77,6 +77,29 @@
     return arr;
   }
 
+  // 记入卡册：每张卡单独存一条明细（等级/HP/攻击），详情页可以按数值排序
+  // best* 仍按老规则：取最高等级那张卡的数值（不改旧行为）
+  function addToCollection(state, card) {
+    var e = state.collection[card.id] || (state.collection[card.id] = { count: 0, legacy: 0, bestLv: 0, bestHp: 0, bestAtk: 0, cards: [] });
+    if (!e.cards) e.cards = [];
+    e.cards.push({ level: card.level, hp: card.hp, atk: card.atk, pulledAt: Date.now() });
+    e.count += 1;
+    if (card.level > e.bestLv) { e.bestLv = card.level; e.bestHp = card.hp; e.bestAtk = card.atk; }
+  }
+
+  // v1.5 之前只存了汇总（count/bestLv/bestHp/bestAtk），没有每张卡的明细：
+  // 拿最高数值补一条明细卡，剩下的张数记为 legacy（旧卡，无单独数值）
+  function migrateCollection(state) {
+    Object.keys(state.collection).forEach(function (id) {
+      var e = state.collection[id];
+      if (!e.cards) {
+        e.cards = [{ level: e.bestLv || 0, hp: e.bestHp || 0, atk: e.bestAtk || 0, pulledAt: 0 }];
+        e.legacy = Math.max(0, (e.count || 1) - 1);
+      }
+      if (typeof e.legacy !== "number") e.legacy = 0;
+    });
+  }
+
   // 开一包（10 张），含 10 连保底；调用前由 UI 保证 packs > 0
   function drawPack(state, rng) {
     rng = rng || Math.random;
@@ -107,12 +130,7 @@
       c.isNew = !state.collection[c.id] && !seenInPack[c.id];
       seenInPack[c.id] = true;
     });
-    cards.forEach(function (c) {
-      if (!state.collection[c.id]) state.collection[c.id] = { count: 0, bestLv: 0, bestHp: 0, bestAtk: 0 };
-      var o = state.collection[c.id];
-      o.count += 1;
-      if (c.level > o.bestLv) { o.bestLv = c.level; o.bestHp = c.hp; o.bestAtk = c.atk; }
-    });
+    cards.forEach(function (c) { addToCollection(state, c); });
     return shuffle(cards, rng);
   }
 
@@ -146,7 +164,8 @@
     SR_PLUS: SR_PLUS, SSR_PLUS: SSR_PLUS, entry: entry, totalWeight: totalWeight,
     drawFromPool: drawFromPool, drawAny: drawAny, rollStats: rollStats, drawCard: drawCard,
     drawPack: drawPack, newState: newState, grantDuePacks: grantDuePacks,
-    msToNextPack: msToNextPack, tierTotals: tierTotals, ownedCount: ownedCount };
+    msToNextPack: msToNextPack, tierTotals: tierTotals, ownedCount: ownedCount,
+    addToCollection: addToCollection, migrateCollection: migrateCollection };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Gacha = api;
 })(typeof window !== "undefined" ? window : globalThis);
