@@ -1,4 +1,4 @@
-// PokeMem — 启动：最后加载。出错红条、旧存档迁移、首次渲染、计时器。
+// PokeMem — 启动：最后加载。旧存档迁移、首次渲染、计时器。（出错红条在 js/store.js）
 (function () {
   "use strict";
   var ctx = PokeMem.ctx;
