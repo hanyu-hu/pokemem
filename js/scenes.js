@@ -57,10 +57,11 @@
     for (var i = 0; i < RARITY_BANDS.length; i++) if (wins >= RARITY_BANDS[i].minWins) band = RARITY_BANDS[i];
     return band;
   }
-  // 野生等级 = 场景基础等级 + 深度，上限 100；稀有野生有等级下限，取两者较高者
+  // 野生等级 = 场景基础等级 + 2×深度（每胜 +2，用户定 2026-11-17：随胜场涨得更陡），上限 100；
+  // 稀有野生有等级下限，取两者较高者
   // （SSR ≥ 携带最高等级 +5，UR / MR ≥ 携带最高等级 +10，用户定 2026-11-17）
   function wildLevelFor(scene, depth, tier, teamMaxLevel) {
-    var level = Math.min(100, scene.baseLevel + depth);
+    var level = Math.min(100, scene.baseLevel + depth * 2);
     if (typeof teamMaxLevel !== "number" || !isFinite(teamMaxLevel) || teamMaxLevel < 1) teamMaxLevel = 1;
     teamMaxLevel = Math.floor(teamMaxLevel);
     if (tier === "SSR") level = Math.max(level, teamMaxLevel + 5);

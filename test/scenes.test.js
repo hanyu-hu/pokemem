@@ -48,7 +48,7 @@ check("非法胜场按 0 算", Scenes.rarityBandFor(-1).weights.N === 100 && Sce
 // 5. 野生等级曲线：基础 + 深度，上限 100，稀有楼层取高者
 const gl = Scenes.sceneById("grassland");
 check("草丛第 1 只 Lv 5", Scenes.wildLevelFor(gl, 0, "N", 1) === 5);
-check("草丛第 10 只 Lv 14", Scenes.wildLevelFor(gl, 9, "N", 1) === 14);
+check("草丛第 10 只 Lv 23（基础 5 + 2×9）", Scenes.wildLevelFor(gl, 9, "N", 1) === 23);
 check("SSR 楼层：携带 50 级 → 55", Scenes.wildLevelFor(gl, 0, "SSR", 50) === 55);
 check("SSR 楼层：携带 1 级 → 6", Scenes.wildLevelFor(gl, 0, "SSR", 1) === 6);
 check("UR/MR 楼层：携带 90 级 → 100 封顶", Scenes.wildLevelFor(gl, 0, "UR", 90) === 100);
@@ -103,8 +103,8 @@ check("SSR 野生：妙蛙花 Lv 55（楼层 50+5）、生命 ×2、暴击 10%",
   wSSR.critRate === 10 && wSSR.hpMax === st3.hp * 2 && wSSR.hp === st3.hp * 2 && wSSR.baseHp === st3.hp);
 // 10. 海洋 UR 彩票：15 胜、rng 0.9986 落 UR 档 = 急冻鸟
 const wUR = Scenes.spawnWild("ocean", 15, 1, seq([0.9986, 0]));
-check("海洋 15 胜 UR = 急冻鸟、生命 ×3、暴击 20%",
-  wUR && wUR.id === 144 && wUR.tier === "UR" && wUR.hpMult === 3 && wUR.critRate === 20 && wUR.level === 53);
+check("海洋 15 胜 UR = 急冻鸟 Lv 68（基础 38 + 2×15）、生命 ×3、暴击 20%",
+  wUR && wUR.id === 144 && wUR.tier === "UR" && wUR.hpMult === 3 && wUR.critRate === 20 && wUR.level === 68);
 // 11. 权重归一化：草丛和冠军之路 15 胜永远刷不出 UR（该档没候选）
 let urCount = 0;
 for (let i = 0; i < 2000; i++) {
@@ -112,10 +112,10 @@ for (let i = 0; i < 2000; i++) {
   if (Scenes.spawnWild("champions-road", 15, 1, () => i / 2000).tier === "UR") urCount++;
 }
 check("草丛/冠军之路 15 胜：2000 次均匀扫，没有一次 UR", urCount === 0);
-// 12. 冠军之路 MR：rng 0.9999 落 MR 档，种内第 2 只 = 梦幻（曲线 60+15=75）
+// 12. 冠军之路 MR：rng 0.9999 落 MR 档，种内第 2 只 = 梦幻（曲线 60+2×15=90）
 const wMR = Scenes.spawnWild("champions-road", 15, 1, seq([0.9999, 0.9999]));
-check("冠军之路 15 胜 MR = 梦幻 Lv 75、生命 ×5、暴击 30%",
-  wMR && wMR.id === 151 && wMR.tier === "MR" && wMR.level === 75 && wMR.hpMult === 5 && wMR.critRate === 30);
+check("冠军之路 15 胜 MR = 梦幻 Lv 90、生命 ×5、暴击 30%",
+  wMR && wMR.id === 151 && wMR.tier === "MR" && wMR.level === 90 && wMR.hpMult === 5 && wMR.critRate === 30);
 // 13. makeWild 直接测：卡比兽 SSR
 const wSn = Scenes.makeWild(POKEDEX[142], 50);
 const stSn = Gacha.statsForLevel(POKEDEX[142], 50);
