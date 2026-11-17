@@ -203,27 +203,42 @@
   // 老存档迁移：没有 trainer 就补一个未注册的；已有的缺字段补默认值、坏值夹回合法范围，
   // 已有的名字/等级/结晶/糖果/道具一律保留，不补发经验和结晶。
   function ensureTrainer(state) {
+    state.version = 2; // F4：迁移过的存档也打上 version 标记（之前只有 newState 带 version）
     var t = state.trainer;
-    if (!t || typeof t !== "object") { state.trainer = newTrainer(); return state.trainer; }
+    // F1：数组也是 typeof "object"，但 JSON.stringify 会丢掉数组上的具名属性，
+    // 存档会被悄悄清空，所以数组直接当损坏处理
+    if (!t || typeof t !== "object" || Array.isArray(t)) { state.trainer = newTrainer(); return state.trainer; }
     if (typeof t.name !== "string") t.name = "";
     if (typeof t.level !== "number" || !(t.level >= 1)) t.level = 1;
     t.level = Math.min(TRAINER_MAX_LEVEL, Math.floor(t.level));
-    if (typeof t.exp !== "number" || t.exp < 0) t.exp = 0;
-    t.exp = t.level >= TRAINER_MAX_LEVEL ? 0 : Math.min(TRAINER_EXP_PER_LEVEL - 1, Math.floor(t.exp));
-    if (typeof t.crystals !== "number" || t.crystals < 0) t.crystals = 0;
+    // F2：NaN / Infinity 也要当坏值处理（NaN < 0 是 false，旧写法会漏过去）
+    // F5：经验溢出按 100 进位成等级再保留余数，而不是直接丢弃
+    if (typeof t.exp !== "number" || !isFinite(t.exp) || t.exp < 0) t.exp = 0;
+    else {
+      t.exp = Math.floor(t.exp);
+      var bonusLevels = Math.floor(t.exp / TRAINER_EXP_PER_LEVEL);
+      if (bonusLevels > 0) {
+        t.level = Math.min(TRAINER_MAX_LEVEL, t.level + bonusLevels);
+        t.exp -= bonusLevels * TRAINER_EXP_PER_LEVEL;
+      }
+    }
+    if (t.level >= TRAINER_MAX_LEVEL) t.exp = 0;
+    if (typeof t.crystals !== "number" || !isFinite(t.crystals) || t.crystals < 0) t.crystals = 0;
     else t.crystals = Math.floor(t.crystals);
-    if (typeof t.candy !== "number" || t.candy < 0) t.candy = 0;
+    if (typeof t.candy !== "number" || !isFinite(t.candy) || t.candy < 0) t.candy = 0;
     else t.candy = Math.floor(t.candy);
-    if (!t.items || typeof t.items !== "object") t.items = freshItems();
+    if (!t.items || typeof t.items !== "object" || Array.isArray(t.items)) t.items = freshItems();
     else ITEM_IDS.forEach(function (id) {
-      if (typeof t.items[id] !== "number" || t.items[id] < 0) t.items[id] = 0;
+      if (typeof t.items[id] !== "number" || !isFinite(t.items[id]) || t.items[id] < 0) t.items[id] = 0;
       else t.items[id] = Math.floor(t.items[id]);
     });
     if (typeof t.registered !== "boolean") t.registered = t.name !== "";
-    if (typeof t.welcomeCrystalsGranted !== "boolean") t.welcomeCrystalsGranted = false;
+    // F3：非布尔的旧标记按真值折算，不直接重置为 false（否则已发过的奖励会被重复发）
+    if (typeof t.welcomeCrystalsGranted !== "boolean") t.welcomeCrystalsGranted = !!t.welcomeCrystalsGranted;
     return t;
   }
   // 注册奖励：第一次调用 +100 结晶并打标，之后再调用返回 0，不重复发放。
+  // 调用顺序：注册流程先填名字、置 registered=true，再调这里；不要在注册前调用。
   function grantWelcomeCrystals(state) {
     var t = ensureTrainer(state);
     if (t.welcomeCrystalsGranted) return 0;

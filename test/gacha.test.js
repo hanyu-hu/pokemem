@@ -167,6 +167,47 @@ Gacha.ensureTrainer(dirty);
 check("坏值夹回合法范围：等级 ≤100、经验/结晶 ≥0、糖果取整、缺的道具补 0",
   dirty.trainer.level === 100 && dirty.trainer.exp === 0 && dirty.trainer.crystals === 0 &&
   dirty.trainer.candy === 2 && dirty.trainer.items.poke_ball === 1 && dirty.trainer.items.great_ball === 0);
+// F6：上面那条在 100 级时经验恒为 0，测不到经验分支，所以经验分支单独测
+const expNeg = Gacha.newState(0);
+expNeg.trainer.level = 50; expNeg.trainer.exp = -5;
+Gacha.ensureTrainer(expNeg);
+check("非满级时经验 <0 → 0，等级不动", expNeg.trainer.level === 50 && expNeg.trainer.exp === 0);
+const expOver = Gacha.newState(0);
+expOver.trainer.level = 50; expOver.trainer.exp = 150;
+Gacha.ensureTrainer(expOver);
+check("经验溢出 150 → 升 1 级余 50（不丢弃）", expOver.trainer.level === 51 && expOver.trainer.exp === 50);
+const expCap = Gacha.newState(0);
+expCap.trainer.level = 99; expCap.trainer.exp = 250;
+Gacha.ensureTrainer(expCap);
+check("99 级经验 250 → 100 级余经验清零", expCap.trainer.level === 100 && expCap.trainer.exp === 0);
+// F1：数组训练师 / 数组道具不能通过类型检查，JSON 会丢数据
+const arrTrainer = { packs: 1, collection: {}, trainer: [] };
+Gacha.ensureTrainer(arrTrainer);
+check("数组 trainer 当损坏处理：换成普通对象", !Array.isArray(arrTrainer.trainer) && arrTrainer.trainer.level === 1);
+const arrItems = Gacha.newState(0);
+arrItems.trainer.items = ["poke_ball"];
+Gacha.ensureTrainer(arrItems);
+check("数组 items 当损坏处理：换成新道具表", !Array.isArray(arrItems.trainer.items) && arrItems.trainer.items.poke_ball === 3);
+// F2：NaN / Infinity 不能漏过夹取
+const nanState = Gacha.newState(0);
+nanState.trainer.crystals = NaN; nanState.trainer.candy = Infinity;
+Gacha.ensureTrainer(nanState);
+check("NaN 结晶 → 0、Infinity 糖果 → 0", nanState.trainer.crystals === 0 && nanState.trainer.candy === 0);
+check("NaN 修好后注册奖励仍能完整发出 100", Gacha.grantWelcomeCrystals(nanState) === 100 && nanState.trainer.crystals === 100);
+// F3：真值的非布尔已发标记不能被重置，否则奖励会重复发
+const flagState = Gacha.newState(0);
+flagState.trainer.welcomeCrystalsGranted = 1; flagState.trainer.crystals = 100;
+check("已发标记为 1 时不再重复发", Gacha.grantWelcomeCrystals(flagState) === 0 && flagState.trainer.crystals === 100);
+// F4：迁移也要打 version 标记；F6：新用户注册路径（newState）也要测一次
+const mig = { packs: 5, collection: {} };
+Gacha.ensureTrainer(mig);
+check("迁移的存档 version 也是 2", mig.version === 2);
+const fresh = Gacha.newState(0);
+check("新用户注册奖励第一次 +100", Gacha.grantWelcomeCrystals(fresh) === 100 && fresh.trainer.crystals === 100);
+check("新用户注册奖励第二次返回 0", Gacha.grantWelcomeCrystals(fresh) === 0 && fresh.trainer.crystals === 100);
+const trA = Gacha.newTrainer(), trB = Gacha.newTrainer();
+trA.items.poke_ball = 99;
+check("两个训练师的道具表互不共享", trB.items.poke_ball === 3);
 const kept = Gacha.newState(0);
 kept.trainer.name = "小智"; kept.trainer.level = 12; kept.trainer.exp = 37;
 kept.trainer.crystals = 40; kept.trainer.candy = 9; kept.trainer.registered = true;
