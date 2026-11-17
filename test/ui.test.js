@@ -108,8 +108,8 @@ check("CSS 有头像圆形裁切与选择器网格",
   css.includes(".trainer-avatar") && css.includes("border-radius: 50%") && css.includes(".avatar-grid") && css.includes(".avatar-option.selected"));
 check("头像用 createElement 造按钮（测试桩可点）",
   trainerJs.includes('document.createElement("button")') && trainerJs.includes('classList.add("avatar-option")'));
-check("头像加载失败回默认赤红",
-  html.includes("onerror=\"this.onerror=null;this.src='assets/avatars/red.png'\""));
+check("非法头像回默认赤红（ensureTrainer 修 + avatarById 兜底，不靠不存在的文件）",
+  trainerJs.includes("return AVATARS[0]") && !html.includes("assets/avatars/"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);

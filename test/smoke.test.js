@@ -477,6 +477,9 @@ var moonBtn2 = $G("avatar-grid").children.filter(function (b) { return b.getAttr
 check("G 选中项有高亮", moonBtn2.classList.contains("selected"));
 $G("avatar-close").click();
 check("G 点关闭收起选择器", !$G("avatar-overlay").classList.contains("show"));
+ctxG.state.trainer.avatar = "pikachu"; // 非法值
+G.PokeMem.renderTrainer();
+check("G 非法头像渲染时回默认赤红", ctxG.state.trainer.avatar === "red" && $G("trainer-avatar").src === G.sandbox.AVATARS[0].img);
 
 console.log(failures === 0 ? "ALL PASS" : failures + " FAILURES");
 process.exit(failures === 0 ? 0 : 1);
