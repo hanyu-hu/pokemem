@@ -63,6 +63,11 @@ check("CSS 有弹窗弹出动画", css.includes("@keyframes pop-in"));
 check("CSS 有 NEW 角标弹跳", css.includes("@keyframes badge-bounce"));
 check("卡片悬停会上浮", css.includes(".pack-card:hover") && css.includes(".dex-cell:hover"));
 check("顶栏是渐变圆角", css.includes("linear-gradient(120deg, #ff6b6b"));
+const i18nText = fs.readFileSync(__dirname + "/../i18n.js", "utf8");
+check("页面加载可爱字体（Baloo 2 + 站酷快乐体）", html.includes("Baloo+2") && html.includes("ZCOOL+KuaiLe"));
+check("正文字体栈以可爱字体开头", css.includes('"Baloo 2", "ZCOOL KuaiLe"'));
+check("入册按钮文案是“入册 & 关闭”", i18nText.includes('入册 & 关闭') && i18nText.includes('Collect & Close'));
+check("入册按钮不再被白底样式盖掉（白字看得见）", css.includes(".overlay-actions button:not(.big-btn)"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
