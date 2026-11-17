@@ -45,6 +45,9 @@ check("详情页有全部卡牌容器", fs.readFileSync(__dirname + "/../index.h
 check("app.js 有详情卡牌列表渲染", app.includes("renderDetailCards"));
 check("app.js 有排序状态（Lv/HP/攻击）", app.includes('detailSort') && app.includes('"level"') && app.includes('"hp"') && app.includes('"atk"'));
 check("启动时迁移旧存档", app.includes("migrateCollection(state)"));
+check("详情左侧是 tab 栏（每张卡一个 tab）", app.includes("card-tab") && app.includes("detailSelected"));
+check("tab 上限 5 张，取 Lv 最高", app.includes("slice(0, 5)") && app.includes("b.level - a.level"));
+check("超 5 张有提示文案", app.includes("top5Note"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);

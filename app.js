@@ -202,22 +202,37 @@
     renderDetailCards(r, owned);
     $("detail-modal").classList.add("show");
   }
+  var detailSelected = null; // 左边 tab 当前选中的那张卡（对象引用，换宝可梦时自动重置）
   function renderDetailCards(r, owned) {
     var box = $("detail-cards");
-    if (!owned || !owned.cards || !owned.cards.length) { box.innerHTML = ""; return; }
-    var cards = owned.cards.slice();
+    if (!owned || !owned.cards || !owned.cards.length) { box.innerHTML = ""; detailSelected = null; return; }
+    // 先按 Lv 取最高的 5 张，再按当前排序键排 tab 顺序
+    var top = owned.cards.slice().sort(function (a, b) { return b.level - a.level; }).slice(0, 5);
     var key = detailSort.key, dir = detailSort.dir;
-    cards.sort(function (a, b) { return dir === "desc" ? b[key] - a[key] : a[key] - b[key]; });
+    top.sort(function (a, b) { return dir === "desc" ? b[key] - a[key] : a[key] - b[key]; });
+    if (!detailSelected || top.indexOf(detailSelected) < 0) detailSelected = top[0];
     var html = '<p class="detail-cards-title">' + t("cardsTitle", { n: owned.count }) + "</p>" +
       '<div class="sort-row"><span>' + t("sortLabel") + "：</span>" +
       sortBtn("level", "Lv") + sortBtn("hp", "HP") + sortBtn("atk", t("atkLabel")) + "</div>" +
-      '<table class="cards-table"><thead><tr><th>#</th><th>Lv</th><th>HP</th><th>' + t("atkLabel") + "</th></tr></thead><tbody>";
-    cards.forEach(function (c, i) {
-      html += "<tr><td>" + (i + 1) + "</td><td>" + c.level + "</td><td>" + c.hp + "</td><td>" + c.atk + "</td></tr>";
-    });
-    html += "</tbody></table>";
+      '<div class="detail-body"><div class="card-tabs">' +
+      top.map(function (c, i) {
+        return '<button class="card-tab' + (c === detailSelected ? " active" : "") + '" data-i="' + i + '">' +
+          "<b>Lv." + c.level + "</b><span>HP " + c.hp + " · " + t("atkLabel") + " " + c.atk + "</span></button>";
+      }).join("") + "</div>" +
+      '<div class="card-detail">' +
+      '<div class="cd-stat"><span>Lv</span><b>' + detailSelected.level + "</b></div>" +
+      '<div class="cd-stat"><span>HP</span><b>' + detailSelected.hp + "</b></div>" +
+      '<div class="cd-stat"><span>' + t("atkLabel") + "</span><b>" + detailSelected.atk + "</b></div>" +
+      "</div></div>";
+    if (owned.cards.length > 5) html += '<p class="rule">' + t("top5Note", { n: owned.cards.length }) + "</p>";
     if (owned.legacy > 0) html += '<p class="rule">' + t("legacyNote", { n: owned.legacy }) + "</p>";
     box.innerHTML = html;
+    box.querySelectorAll(".card-tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        detailSelected = top[parseInt(btn.getAttribute("data-i"), 10)];
+        renderDetailCards(r, owned);
+      });
+    });
     box.querySelectorAll("[data-sort]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var k = btn.getAttribute("data-sort");
