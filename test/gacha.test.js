@@ -146,5 +146,33 @@ check("补生成的卡 HP/攻击符合公式",
 check("最高等级仍是 94（补生成没超过原最高）", e4b.bestLv === 94 && e4b.cards.filter(c => c.level === 94).length === 1);
 check("补生成只跑一次", Gacha.repairLegacyCards(s7, seededRng) === 0);
 
+// 12. 训练师资料（Task 4/5）：新存档默认值、老存档迁移、注册奖励只发一次
+const st0 = Gacha.newState(0);
+check("新存档带训练师：1 级 0 经验", st0.trainer.level === 1 && st0.trainer.exp === 0);
+check("新存档结晶 0、糖果 0、未注册", st0.trainer.crystals === 0 && st0.trainer.candy === 0 && st0.trainer.registered === false);
+check("新存档精灵球 3 个、其他道具 0",
+  st0.trainer.items.poke_ball === 3 && Gacha.ITEM_IDS.filter(id => id !== "poke_ball").every(id => st0.trainer.items[id] === 0));
+check("新存档 version 2", st0.version === 2);
+const legacy = { packs: 5, collection: { 25: { count: 1 } }, totalDraws: 10 };
+Gacha.ensureTrainer(legacy);
+check("老存档迁移补训练师，不动卡包和卡册",
+  legacy.trainer && legacy.trainer.level === 1 && legacy.packs === 5 && legacy.collection[25].count === 1);
+check("迁移来的训练师结晶 0（注册时再发）", legacy.trainer.crystals === 0 && legacy.trainer.welcomeCrystalsGranted === false);
+check("注册奖励第一次 +100", Gacha.grantWelcomeCrystals(legacy) === 100 && legacy.trainer.crystals === 100);
+check("注册奖励第二次返回 0、不重复发", Gacha.grantWelcomeCrystals(legacy) === 0 && legacy.trainer.crystals === 100);
+const dirty = Gacha.newState(0);
+dirty.trainer.level = 999; dirty.trainer.exp = -5; dirty.trainer.crystals = -1;
+dirty.trainer.candy = 2.7; dirty.trainer.items = { poke_ball: 1 };
+Gacha.ensureTrainer(dirty);
+check("坏值夹回合法范围：等级 ≤100、经验/结晶 ≥0、糖果取整、缺的道具补 0",
+  dirty.trainer.level === 100 && dirty.trainer.exp === 0 && dirty.trainer.crystals === 0 &&
+  dirty.trainer.candy === 2 && dirty.trainer.items.poke_ball === 1 && dirty.trainer.items.great_ball === 0);
+const kept = Gacha.newState(0);
+kept.trainer.name = "小智"; kept.trainer.level = 12; kept.trainer.exp = 37;
+kept.trainer.crystals = 40; kept.trainer.candy = 9; kept.trainer.registered = true;
+Gacha.ensureTrainer(kept);
+check("已有训练师的字段原样保留", kept.trainer.name === "小智" && kept.trainer.level === 12 &&
+  kept.trainer.exp === 37 && kept.trainer.crystals === 40 && kept.trainer.candy === 9);
+
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
