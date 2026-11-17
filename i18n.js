@@ -112,10 +112,24 @@ var I18N = {
 };
 var TYPE_EN = { "草": "Grass", "毒": "Poison", "火": "Fire", "水": "Water", "虫": "Bug", "飞行": "Flying", "一般": "Normal", "电": "Electric", "地面": "Ground", "格斗": "Fighting", "超能力": "Psychic", "岩石": "Rock", "冰": "Ice", "幽灵": "Ghost", "龙": "Dragon" };
 var TIER_EN = { N: "Common", R: "Rare", SR: "Super Rare", SSR: "Legendary", UR: "Mythical", MR: "Phantom" };
+// 稀有度标记（画在稀有度文字边上）：N 黑点 1 个、R 黑星 1 颗、SR 黑星 2 颗、
+// SSR 金星 1 颗、UR 金星 2 颗、MR 粉星 1 颗
+var RARITY_MARK = {
+  N: { text: "●", cls: "mark-black" },
+  R: { text: "★", cls: "mark-black" },
+  SR: { text: "★★", cls: "mark-black" },
+  SSR: { text: "★", cls: "mark-gold" },
+  UR: { text: "★★", cls: "mark-gold" },
+  MR: { text: "★", cls: "mark-pink" }
+};
+function rarityMarkHtml(tier) {
+  var m = RARITY_MARK[tier] || RARITY_MARK.N;
+  return '<span class="rarity-mark ' + m.cls + '">' + m.text + "</span>";
+}
 function i18nT(lang, key, vars) {
   var s = (I18N[lang] && I18N[lang][key]) || I18N.zh[key] || key;
   if (vars) Object.keys(vars).forEach(function (k) { s = s.split("{" + k + "}").join(String(vars[k])); });
   return s;
 }
-if (typeof window !== "undefined") { window.I18N = I18N; window.TYPE_EN = TYPE_EN; window.TIER_EN = TIER_EN; window.i18nT = i18nT; }
-if (typeof module !== "undefined") module.exports = { I18N: I18N, TYPE_EN: TYPE_EN, TIER_EN: TIER_EN, i18nT: i18nT };
+if (typeof window !== "undefined") { window.I18N = I18N; window.TYPE_EN = TYPE_EN; window.TIER_EN = TIER_EN; window.i18nT = i18nT; window.RARITY_MARK = RARITY_MARK; window.rarityMarkHtml = rarityMarkHtml; }
+if (typeof module !== "undefined") module.exports = { I18N: I18N, TYPE_EN: TYPE_EN, TIER_EN: TIER_EN, i18nT: i18nT, RARITY_MARK: RARITY_MARK, rarityMarkHtml: rarityMarkHtml };

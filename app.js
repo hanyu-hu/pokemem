@@ -66,6 +66,14 @@
     return h + ":" + m + ":" + ss;
   }
   function tierClass(tier) { return "tier-" + tier; }
+  function mark(tier) { return rarityMarkHtml(tier); }
+  // SSR / MR 翻过来时像炉石开卡那样震一下：先去掉再加，同一张牌点两次也能重播
+  function shakeIfSpecial(el, tier) {
+    if (tier !== "SSR" && tier !== "MR") return;
+    el.classList.remove("special-shake");
+    void el.offsetWidth;
+    el.classList.add("special-shake");
+  }
 
   // ---------- 计时 ----------
   function tick() {
@@ -113,6 +121,7 @@
     currentPack.forEach(function (c) {
       var d = document.createElement("div");
       d.className = "pack-card " + tierClass(c.tier);
+      d.dataset.tier = c.tier;
       d.innerHTML =
         '<div class="card-inner">' +
         '<div class="card-front"><div class="card-back">?</div></div>' +
@@ -120,18 +129,26 @@
         '<img src="' + imgUrl(c.id) + '" alt="' + cardName(c) + '" loading="lazy" onerror="this.style.display=\'none\'">' +
         '<div class="card-no">#' + String(c.id).padStart(3, "0") + '</div>' +
         '<div class="card-name">' + cardName(c) + '</div>' +
-        '<div class="card-tier">' + c.tier + " · " + tierLabel(c.tier) + "</div>" +
+        '<div class="card-tier">' + mark(c.tier) + " " + c.tier + " · " + tierLabel(c.tier) + "</div>" +
         '<div class="card-stats">Lv.' + c.level + "　HP " + c.hp + "　" + t("atkLabel") + " " + c.atk + "</div>" +
         (c.isNew ? '<div class="new-badge">NEW</div>' : "") +
         (c.pity ? '<div class="pity-badge">' + t("pityBadge") + "</div>" : "") +
         "</div></div>";
-      d.addEventListener("click", function () { d.classList.add("flipped"); });
+      d.addEventListener("click", function () {
+        if (d.classList.contains("flipped")) return;
+        d.classList.add("flipped");
+        shakeIfSpecial(d, c.tier);
+      });
       wrap.appendChild(d);
     });
     $("pack-summary").textContent = t("packHint");
   }
   $("flip-all-btn").addEventListener("click", function () {
-    document.querySelectorAll(".pack-card").forEach(function (el) { el.classList.add("flipped"); });
+    document.querySelectorAll(".pack-card").forEach(function (el) {
+      if (el.classList.contains("flipped")) return;
+      el.classList.add("flipped");
+      shakeIfSpecial(el, el.dataset.tier);
+    });
     var best = currentPack.slice().sort(function (a, b) {
       var order = { MR: 0, UR: 1, SSR: 2, SR: 3, R: 4, N: 5 };
       return order[a.tier] - order[b.tier];
@@ -162,7 +179,7 @@
         '<img src="' + imgUrl(id) + '" alt="' + dexName(r) + '" loading="lazy" onerror="this.style.display=\'none\'">' +
         '<div class="dex-no">#' + String(id).padStart(3, "0") + "</div>" +
         '<div class="dex-name">' + (owned ? dexName(r) : t("missingName")) + "</div>" +
-        '<div class="dex-tier">' + r[4] + "</div>" +
+        '<div class="dex-tier">' + mark(r[4]) + " " + r[4] + "</div>" +
         (owned ? '<div class="dex-count">×' + owned.count + "</div>" : "");
       cell.addEventListener("click", function () { showDetail(r); });
       grid.appendChild(cell);
@@ -176,7 +193,7 @@
     $("detail-img").src = imgUrl(r[0]);
     $("detail-img").style.display = "";
     $("detail-name").textContent = "#" + String(r[0]).padStart(3, "0") + " " + primary + "（" + secondary + "）";
-    $("detail-meta").textContent = typeLabel(r[3]) + "　·　" + r[4] + " " + tierLabel(r[4]) + "　·　" + t("perCardRate") + " " + r[5] + "%";
+    $("detail-meta").innerHTML = typeLabel(r[3]) + "　·　" + mark(r[4]) + " " + r[4] + " " + tierLabel(r[4]) + "　·　" + t("perCardRate") + " " + r[5] + "%";
     $("detail-owned").textContent = owned
       ? t("detailOwned", { n: owned.count, lv: owned.bestLv, hp: owned.bestHp, atk: owned.bestAtk })
       : t("detailMissing");
@@ -207,7 +224,7 @@
     var html = "";
     ["MR", "UR", "SSR", "SR", "R", "N"].forEach(function (tier) {
       var perCard = (tObj.totals[tier] / tObj.counts[tier]).toFixed(3).replace(/0$/, "");
-      html += "<tr><td><span class='pill " + tierClass(tier) + "'>" + tier + "</span> " + tierLabel(tier) +
+      html += "<tr><td>" + mark(tier) + " <span class='pill " + tierClass(tier) + "'>" + tier + "</span> " + tierLabel(tier) +
         "</td><td>" + tObj.counts[tier] + "</td><td>" + tObj.totals[tier].toFixed(2) + "%</td><td>" + perCard + "%</td></tr>";
     });
     $("rates-body").innerHTML = html;
