@@ -94,5 +94,13 @@ check("卡面背景用属性底色变量",
   css.indexOf(".card-face { background: var(--tb, #fff);") >= 0 &&
   css.indexOf(".dex-cell { background: var(--tb, #fff);") >= 0);
 
+// ---- 卡面属性标：只要图标、不要字 ----
+check("typeIconHtml 已导出", typeof Types.typeIconHtml === "function");
+check("属性标只要图标（fire.svg，无可见文字）",
+  Types.typeIconHtml("fire").indexOf("fire.svg") >= 0 &&
+  Types.typeIconHtml("fire").replace(/alt="[^"]*"/, "").indexOf("火") < 0);
+check("属性标还是 type-chip（卡面样式复用）",
+  Types.typeIconHtml("fire").indexOf('class="type-chip"') >= 0);
+
 console.log(failures === 0 ? "全部通过 ✅" : failures + " 项失败 ❌");
 process.exit(failures === 0 ? 0 : 1);

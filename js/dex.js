@@ -22,7 +22,7 @@
       var typeIds = owned ? PokeMem.Types.parseTypes(r[3]) : [];
       cell.className = "dex-cell " + PokeMem.tierClass(r[4]) + (owned ? (typeIds[0] ? " tbg-" + typeIds[0] : "") : " missing");
       cell.innerHTML =
-        (owned && typeIds.length ? '<div class="card-types">' + typeIds.map(function (id) { return PokeMem.Types.typeChipHtml(id, PokeMem.lang()); }).join("") + "</div>" : "") +
+        (owned && typeIds.length ? '<div class="card-types">' + typeIds.map(function (id) { return PokeMem.Types.typeIconHtml(id); }).join("") + "</div>" : "") +
         '<div class="card-art"><img src="' + imgUrl(id) + '" alt="' + dexName(r) + '" loading="lazy" onerror="this.style.display=\'none\'"></div>' +
         '<div class="dex-no">#' + String(id).padStart(3, "0") + "</div>" +
         '<div class="dex-name">' + (owned ? dexName(r) : t("missingName")) + "</div>" +

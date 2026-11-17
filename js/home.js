@@ -76,7 +76,7 @@
         '<div class="card-front"></div>' +
         '<div class="card-face">' +
         '<div class="card-types">' +
-        typeIds.map(function (id) { return PokeMem.Types.typeChipHtml(id, PokeMem.lang()); }).join("") +
+        typeIds.map(function (id) { return PokeMem.Types.typeIconHtml(id); }).join("") +
         (c.pity ? '<span class="pity-badge">' + t("pityBadge") + "</span>" : "") +
         "</div>" +
         '<div class="card-art"><img src="' + imgUrl(c.id) + '" alt="' + cardName(c) + '" loading="lazy" onerror="this.style.display=\'none\'"></div>' +

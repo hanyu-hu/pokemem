@@ -150,6 +150,8 @@ check("详情用属性图标 + 弱点图标",
 check("属性徽章有样式", css.includes(".type-chip") && css.includes(".type-chip img"));
 check("开包卡面按主属性染色 + 徽章行 + 画框", homeJs.includes("tbg-") && homeJs.includes("card-types") && homeJs.includes("card-art"));
 check("卡册格子按主属性染色 + 徽章行 + 画框", dexJs.includes("tbg-") && dexJs.includes("card-types") && dexJs.includes("card-art"));
+check("卡面属性标只要图标不要字", homeJs.includes("typeIconHtml") && dexJs.includes("typeIconHtml"));
+check("卡面属性标是圆形图标（白圈 + 阴影）", css.includes(".card-types .type-chip img") && css.includes("width: 20px") && css.includes("rgba(255,255,255,.95)"));
 check("旧的纯文字 typeLabel 已删", !fs.readFileSync(__dirname + "/../js/lang.js", "utf8").includes("typeLabel") && !dexJs.includes("typeLabel"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
