@@ -1,6 +1,32 @@
-// PokeMem 网页端 v1 — UI 层（localStorage 存档，单机版）
+// PokeMem 网页端 v1.3 — UI 层（localStorage 存档，单机版，中英切换）
 (function () {
   "use strict";
+  var SAVE_KEY = "pokemem-save-v1";
+  var state = load();
+
+  // ---------- 语言 ----------
+  function lang() { return state.lang === "en" ? "en" : "zh"; }
+  function t(key, vars) { return i18nT(lang(), key, vars); }
+  function dexName(row) { return lang() === "en" ? row[2] : row[1]; } // 图鉴行 [编号, 中文, 英文, ...]
+  function cardName(c) { return lang() === "en" ? c.en : c.name; } // 抽到的卡 {name: 中文, en: 英文}
+  function tierLabel(tier) { return lang() === "en" ? TIER_EN[tier] : Gacha.TIER_LABEL[tier]; }
+  function typeLabel(types) {
+    if (lang() !== "en") return types;
+    return types.split("、").map(function (x) { return TYPE_EN[x] || x; }).join(", ");
+  }
+  function applyLang() {
+    document.documentElement.lang = lang() === "en" ? "en" : "zh-CN";
+    document.title = t("docTitle");
+    document.querySelectorAll("[data-i18n]").forEach(function (el) { el.textContent = t(el.getAttribute("data-i18n")); });
+    document.querySelectorAll("[data-i18n-ph]").forEach(function (el) { el.setAttribute("placeholder", t(el.getAttribute("data-i18n-ph"))); });
+    document.getElementById("lang-zh").classList.toggle("active", lang() === "zh");
+    document.getElementById("lang-en").classList.toggle("active", lang() === "en");
+    renderHeader();
+    renderCollection();
+    renderRates();
+    if (currentPack) renderPack();
+  }
+
   // 出错时在页面顶部显示红条，别再静默没反应
   window.addEventListener("error", function (e) {
     var bar = document.getElementById("error-bar");
@@ -10,20 +36,23 @@
       bar.style.cssText = "background:#c00;color:#fff;padding:10px 14px;font-size:13px;position:sticky;top:0;z-index:99";
       document.body.prepend(bar);
     }
-    bar.textContent = "出错了：" + (e.message || "未知错误") + "，截图发我看一下。";
+    bar.textContent = t("errorPrefix", { msg: e.message || "unknown error" });
   });
-  var SAVE_KEY = "pokemem-save-v1";
-  var state = load();
 
   function load() {
     try {
       var raw = localStorage.getItem(SAVE_KEY);
       if (raw) {
         var s = JSON.parse(raw);
-        if (s && typeof s.packs === "number" && s.collection) return s;
+        if (s && typeof s.packs === "number" && s.collection) {
+          if (!s.lang) s.lang = "zh";
+          return s;
+        }
       }
     } catch (e) { /* 存档损坏则重开 */ }
-    return Gacha.newState(Date.now());
+    var fresh = Gacha.newState(Date.now());
+    fresh.lang = "zh";
+    return fresh;
   }
   function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {} }
 
@@ -36,7 +65,7 @@
     var ss = String(s % 60).padStart(2, "0");
     return h + ":" + m + ":" + ss;
   }
-  function tierClass(t) { return "tier-" + t; }
+  function tierClass(tier) { return "tier-" + tier; }
 
   // ---------- 计时 ----------
   function tick() {
@@ -52,21 +81,21 @@
     $("pack-count").textContent = state.packs;
     $("owned-count").textContent = Gacha.ownedCount(state) + " / 151";
     $("total-draws").textContent = state.totalDraws;
-    $("since-ssr").textContent = state.sinceSSR >= 49 ? "下一抽必出 SSR+" : ("再 " + (50 - state.sinceSSR) + " 抽保底 SSR+");
+    $("since-ssr").textContent = state.sinceSSR >= 49 ? t("pityNext") : t("pityIn", { n: 50 - state.sinceSSR });
     var openBtn = $("open-pack-btn");
     openBtn.disabled = state.packs <= 0;
-    openBtn.textContent = state.packs > 0 ? "开一包（10 张）" : "没有卡包";
-    if (state.debug) {
-      $("next-pack").textContent = "Debug 模式：计时暂停";
-    } else {
-      $("next-pack").textContent = state.packs > 0
-        ? "下一包 " + fmtTime(Gacha.msToNextPack(state, Date.now()))
-        : "下一包 " + fmtTime(Gacha.msToNextPack(state, Date.now()));
-    }
+    openBtn.textContent = state.packs > 0 ? t("openPack") : t("noPack");
+    $("next-pack").textContent = state.debug
+      ? t("nextPackDebug")
+      : t("nextPack", { time: fmtTime(Gacha.msToNextPack(state, Date.now())) });
     $("debug-badge").style.display = state.debug ? "inline-block" : "none";
     $("debug-panel").style.display = state.debug ? "block" : "none";
     $("debug-toggle").checked = state.debug;
   }
+
+  // ---------- 语言切换 ----------
+  $("lang-zh").addEventListener("click", function () { state.lang = "zh"; save(); applyLang(); });
+  $("lang-en").addEventListener("click", function () { state.lang = "en"; save(); applyLang(); });
 
   // ---------- 开包 ----------
   var currentPack = null;
@@ -81,25 +110,25 @@
   function renderPack() {
     var wrap = $("pack-cards");
     wrap.innerHTML = "";
-    currentPack.forEach(function (c, i) {
+    currentPack.forEach(function (c) {
       var d = document.createElement("div");
       d.className = "pack-card " + tierClass(c.tier);
       d.innerHTML =
         '<div class="card-inner">' +
         '<div class="card-front"><div class="card-back">?</div></div>' +
         '<div class="card-face">' +
-        '<img src="' + imgUrl(c.id) + '" alt="' + c.name + '" loading="lazy" onerror="this.style.display=\'none\'">' +
+        '<img src="' + imgUrl(c.id) + '" alt="' + cardName(c) + '" loading="lazy" onerror="this.style.display=\'none\'">' +
         '<div class="card-no">#' + String(c.id).padStart(3, "0") + '</div>' +
-        '<div class="card-name">' + c.name + '</div>' +
-        '<div class="card-tier">' + c.tier + " · " + Gacha.TIER_LABEL[c.tier] + "</div>" +
-        '<div class="card-stats">Lv.' + c.level + "　HP " + c.hp + "　攻击 " + c.atk + "</div>" +
+        '<div class="card-name">' + cardName(c) + '</div>' +
+        '<div class="card-tier">' + c.tier + " · " + tierLabel(c.tier) + "</div>" +
+        '<div class="card-stats">Lv.' + c.level + "　HP " + c.hp + "　" + t("atkLabel") + " " + c.atk + "</div>" +
         (c.isNew ? '<div class="new-badge">NEW</div>' : "") +
-        (c.pity ? '<div class="pity-badge">保底</div>' : "") +
+        (c.pity ? '<div class="pity-badge">' + t("pityBadge") + "</div>" : "") +
         "</div></div>";
       d.addEventListener("click", function () { d.classList.add("flipped"); });
       wrap.appendChild(d);
     });
-    $("pack-summary").textContent = "点击卡牌逐张翻开，或直接全部翻开";
+    $("pack-summary").textContent = t("packHint");
   }
   $("flip-all-btn").addEventListener("click", function () {
     document.querySelectorAll(".pack-card").forEach(function (el) { el.classList.add("flipped"); });
@@ -108,7 +137,7 @@
       return order[a.tier] - order[b.tier];
     })[0];
     var news = currentPack.filter(function (c) { return c.isNew; }).length;
-    $("pack-summary").textContent = "本包最佳：" + best.name + "（" + best.tier + "）　新卡 " + news + " 张";
+    $("pack-summary").textContent = t("packBest", { name: cardName(best), tier: best.tier, n: news });
   });
   $("close-pack-btn").addEventListener("click", function () {
     $("pack-overlay").classList.remove("show");
@@ -130,26 +159,27 @@
       var cell = document.createElement("div");
       cell.className = "dex-cell " + tierClass(r[4]) + (owned ? "" : " missing");
       cell.innerHTML =
-        '<img src="' + imgUrl(id) + '" alt="' + r[1] + '" loading="lazy" onerror="this.style.display=\'none\'">' +
+        '<img src="' + imgUrl(id) + '" alt="' + dexName(r) + '" loading="lazy" onerror="this.style.display=\'none\'">' +
         '<div class="dex-no">#' + String(id).padStart(3, "0") + "</div>" +
-        '<div class="dex-name">' + (owned ? r[1] : "？？？") + "</div>" +
+        '<div class="dex-name">' + (owned ? dexName(r) : t("missingName")) + "</div>" +
         '<div class="dex-tier">' + r[4] + "</div>" +
         (owned ? '<div class="dex-count">×' + owned.count + "</div>" : "");
       cell.addEventListener("click", function () { showDetail(r); });
       grid.appendChild(cell);
     });
     var shown = grid.children.length;
-    $("collection-summary").textContent = "拥有 " + Gacha.ownedCount(state) + " / 151　·　当前显示 " + shown + " 只";
+    $("collection-summary").textContent = t("collectionSummary", { owned: Gacha.ownedCount(state), shown: shown });
   }
   function showDetail(r) {
     var owned = state.collection[r[0]];
+    var primary = dexName(r), secondary = lang() === "en" ? r[1] : r[2];
     $("detail-img").src = imgUrl(r[0]);
     $("detail-img").style.display = "";
-    $("detail-name").textContent = "#" + String(r[0]).padStart(3, "0") + " " + r[1] + "（" + r[2] + "）";
-    $("detail-meta").textContent = r[3] + "　·　" + r[4] + " " + Gacha.TIER_LABEL[r[4]] + "　·　单只概率 " + r[5] + "%";
+    $("detail-name").textContent = "#" + String(r[0]).padStart(3, "0") + " " + primary + "（" + secondary + "）";
+    $("detail-meta").textContent = typeLabel(r[3]) + "　·　" + r[4] + " " + tierLabel(r[4]) + "　·　" + t("perCardRate") + " " + r[5] + "%";
     $("detail-owned").textContent = owned
-      ? "已拥有 ×" + owned.count + "　·　最高等级 Lv." + owned.bestLv + "（HP " + owned.bestHp + " / 攻击 " + owned.bestAtk + "）"
-      : "尚未拥有";
+      ? t("detailOwned", { n: owned.count, lv: owned.bestLv, hp: owned.bestHp, atk: owned.bestAtk })
+      : t("detailMissing");
     $("detail-modal").classList.add("show");
   }
   $("detail-close").addEventListener("click", function () { $("detail-modal").classList.remove("show"); });
@@ -173,15 +203,15 @@
 
   // ---------- 概率页 ----------
   function renderRates() {
-    var t = Gacha.tierTotals();
+    var tObj = Gacha.tierTotals();
     var html = "";
     ["MR", "UR", "SSR", "SR", "R", "N"].forEach(function (tier) {
-      var perCard = (t.totals[tier] / t.counts[tier]).toFixed(3).replace(/0$/, "");
-      html += "<tr><td><span class='pill " + tierClass(tier) + "'>" + tier + "</span> " + Gacha.TIER_LABEL[tier] +
-        "</td><td>" + t.counts[tier] + "</td><td>" + t.totals[tier].toFixed(2) + "%</td><td>" + perCard + "%</td></tr>";
+      var perCard = (tObj.totals[tier] / tObj.counts[tier]).toFixed(3).replace(/0$/, "");
+      html += "<tr><td><span class='pill " + tierClass(tier) + "'>" + tier + "</span> " + tierLabel(tier) +
+        "</td><td>" + tObj.counts[tier] + "</td><td>" + tObj.totals[tier].toFixed(2) + "%</td><td>" + perCard + "%</td></tr>";
     });
     $("rates-body").innerHTML = html;
-    $("rates-note").textContent = "单只概率合计 " + t.sum.toFixed(2) + "%（表格四舍五入所致），抽卡时按权重归一化到 100%。";
+    $("rates-note").textContent = t("ratesNote", { sum: tObj.sum.toFixed(2) });
   }
 
   // ---------- 页签 ----------
@@ -204,7 +234,7 @@
   });
   $("add-packs-btn").addEventListener("click", function () {
     var n = parseInt($("add-packs-input").value, 10);
-    if (!n || n <= 0) { alert("输入要加的包数（正整数）"); return; }
+    if (!n || n <= 0) { alert(t("alertAddPacks")); return; }
     state.packs += n;
     save(); renderHeader();
   });
@@ -218,19 +248,20 @@
     state.lastGrantAt = Date.now() - Gacha.PACK_INTERVAL_MS;
     var due = Gacha.grantDuePacks(state, Date.now());
     save(); renderHeader();
-    alert(due > 0 ? "已到账 1 包" : "还没到时间");
+    alert(due > 0 ? t("alertPackArrived") : t("alertNotYet"));
   });
   $("reset-save-btn").addEventListener("click", function () {
-    if (!confirm("确定清空全部存档吗？卡册、抽卡记录都会消失。")) return;
+    if (!confirm(t("confirmReset"))) return;
+    var keepLang = state.lang;
     localStorage.removeItem(SAVE_KEY);
     state = Gacha.newState(Date.now());
+    state.lang = keepLang; // 清空存档不重置语言
     state.debug = true; // 清空后仍留在 Debug 模式，方便继续测试
     save(); renderHeader(); renderCollection();
   });
 
   // ---------- 启动 ----------
+  applyLang();
   tick();
   setInterval(tick, 1000);
-  renderCollection();
-  renderRates();
 })();

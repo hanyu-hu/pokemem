@@ -4,6 +4,9 @@ body { margin: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", 
 .topbar h1 { margin: 0; font-size: 20px; }
 .subtitle { font-size: 13px; font-weight: normal; opacity: .9; }
 .debug-badge { background: #ffd23f; color: #111; font-weight: bold; font-size: 12px; padding: 3px 8px; border-radius: 4px; }
+.lang-switch { margin-left: auto; display: flex; gap: 4px; }
+.lang-btn { padding: 5px 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,.6); background: transparent; color: #fff; cursor: pointer; font-size: 13px; }
+.lang-btn.active { background: #fff; color: #e3350d; font-weight: bold; }
 main { max-width: 960px; margin: 0 auto; padding: 16px; }
 .tab-page { display: none; }
 .tab-page.active { display: block; }

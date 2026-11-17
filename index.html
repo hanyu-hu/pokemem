@@ -8,54 +8,58 @@
 </head>
 <body>
 <header class="topbar">
-  <h1>🎴 PokeMem <span class="subtitle">宝可梦 151 抽卡</span></h1>
+  <h1>🎴 PokeMem <span class="subtitle" data-i18n="subtitle">宝可梦 151 抽卡</span></h1>
   <span id="debug-badge" class="debug-badge" style="display:none">DEBUG</span>
+  <div class="lang-switch">
+    <button id="lang-zh" class="lang-btn active">中文</button>
+    <button id="lang-en" class="lang-btn">EN</button>
+  </div>
 </header>
 
 <main>
   <!-- 开包页 -->
   <section id="tab-home" class="tab-page active">
     <div class="stat-row">
-      <div class="stat"><div class="stat-num" id="pack-count">1</div><div class="stat-label">拥有卡包</div></div>
-      <div class="stat"><div class="stat-num" id="owned-count">0 / 151</div><div class="stat-label">图鉴收集</div></div>
-      <div class="stat"><div class="stat-num" id="total-draws">0</div><div class="stat-label">总抽卡数</div></div>
+      <div class="stat"><div class="stat-num" id="pack-count">1</div><div class="stat-label" data-i18n="packLabel">拥有卡包</div></div>
+      <div class="stat"><div class="stat-num" id="owned-count">0 / 151</div><div class="stat-label" data-i18n="dexLabel">图鉴收集</div></div>
+      <div class="stat"><div class="stat-num" id="total-draws">0</div><div class="stat-label" data-i18n="drawsLabel">总抽卡数</div></div>
     </div>
     <p class="hint" id="next-pack">下一包 --:--:--</p>
     <p class="hint" id="since-ssr">再 50 抽保底 SSR+</p>
     <button id="open-pack-btn" class="big-btn">开一包（10 张）</button>
-    <p class="rule">正式版：每小时自动获得 1 包卡包 · 每包 10 张 · 10 连保底至少 1 张 SR 及以上 · 连续 50 抽未出 SSR 则下一抽必出 SSR+</p>
+    <p class="rule" data-i18n="homeRule">正式版：每小时自动获得 1 包卡包 · 每包 10 张 · 10 连保底至少 1 张 SR 及以上 · 连续 50 抽未出 SSR 则下一抽必出 SSR+</p>
 
     <div class="debug-panel" id="debug-panel" style="display:none">
-      <h3>🛠 Debug 模式</h3>
+      <h3 data-i18n="debugTitle">🛠 Debug 模式</h3>
       <div class="debug-row">
         <input id="add-packs-input" type="number" min="1" value="10" inputmode="numeric">
-        <button id="add-packs-btn">加这么多包</button>
+        <button id="add-packs-btn" data-i18n="addPacksBtn">加这么多包</button>
       </div>
       <div class="debug-row">
         <button data-add-packs="1">+1 包</button>
         <button data-add-packs="10">+10 包</button>
         <button data-add-packs="100">+100 包</button>
-        <button id="next-pack-now-btn">下一包立即到账</button>
+        <button id="next-pack-now-btn" data-i18n="nextPackNow">下一包立即到账</button>
       </div>
       <div class="debug-row">
-        <button id="reset-save-btn" class="danger">清空存档</button>
+        <button id="reset-save-btn" class="danger" data-i18n="resetSave">清空存档</button>
       </div>
-      <p class="rule">Debug 加的包切回正式版后仍保留；正式版计时只在 Debug 关闭时走。</p>
+      <p class="rule" data-i18n="debugRule">Debug 加的包切回正式版后仍保留；正式版计时只在 Debug 关闭时走。</p>
     </div>
-    <label class="debug-switch"><input type="checkbox" id="debug-toggle"> Debug 模式（随意加包 / 跳过计时）</label>
+    <label class="debug-switch"><input type="checkbox" id="debug-toggle"> <span data-i18n="debugSwitch">Debug 模式（随意加包 / 跳过计时）</span></label>
   </section>
 
   <!-- 卡册页 -->
   <section id="tab-dex" class="tab-page">
     <p class="hint" id="collection-summary"></p>
-    <input id="search-input" type="search" placeholder="搜名字 / 英文名 / 编号，如 皮卡丘 / 25">
+    <input id="search-input" type="search" placeholder="搜名字 / 英文名 / 编号，如 皮卡丘 / 25" data-i18n-ph="searchPh">
     <div class="filters">
-      <button data-owned-filter="ALL" class="active">全部</button>
-      <button data-owned-filter="OWNED">已拥有</button>
-      <button data-owned-filter="MISSING">未拥有</button>
+      <button data-owned-filter="ALL" class="active" data-i18n="filterAll">全部</button>
+      <button data-owned-filter="OWNED" data-i18n="filterOwned">已拥有</button>
+      <button data-owned-filter="MISSING" data-i18n="filterMissing">未拥有</button>
     </div>
     <div class="filters">
-      <button data-tier-filter="ALL" class="active">全部稀有度</button>
+      <button data-tier-filter="ALL" class="active" data-i18n="tierAll">全部稀有度</button>
       <button data-tier-filter="MR">MR</button>
       <button data-tier-filter="UR">UR</button>
       <button data-tier-filter="SSR">SSR</button>
@@ -69,31 +73,31 @@
   <!-- 概率页 -->
   <section id="tab-rates" class="tab-page">
     <table class="rates-table">
-      <thead><tr><th>稀有度</th><th>只数</th><th>档位合计</th><th>单只概率</th></tr></thead>
+      <thead><tr><th data-i18n="thRarity">稀有度</th><th data-i18n="thCount">只数</th><th data-i18n="thTierTotal">档位合计</th><th data-i18n="thPerCard">单只概率</th></tr></thead>
       <tbody id="rates-body"></tbody>
     </table>
     <p class="rule" id="rates-note"></p>
-    <p class="rule">抽法：每次按表格单只概率加权抽一只（151 只权重归一化）。保底：每包至少 1 张 SR 及以上；连续 50 抽未出 SSR 则下一抽必出 SSR 及以上；MR 不设保底。</p>
-    <p class="rule">等级：最低等级～100 随机；HP = ⌊(2×HP种族值+93)×等级÷100⌋+等级+10；攻击 = ⌊(2×攻击种族值+93)×等级÷100⌋+5。</p>
-    <p class="rule">概率与数值来源：图鉴表「图鉴151」与另一位工程师的抽卡逻辑文档；图片为 PokeAPI 官方立绘，需联网加载。</p>
+    <p class="rule" data-i18n="ratesRule1">抽法：每次按表格单只概率加权抽一只（151 只权重归一化）。保底：每包至少 1 张 SR 及以上；连续 50 抽未出 SSR 则下一抽必出 SSR 及以上；MR 不设保底。</p>
+    <p class="rule" data-i18n="ratesRule2">等级：最低等级～100 随机；HP = ⌊(2×HP种族值+93)×等级÷100⌋+等级+10；攻击 = ⌊(2×攻击种族值+93)×等级÷100⌋+5。</p>
+    <p class="rule" data-i18n="ratesRule3">概率与数值来源：图鉴表「图鉴151」与另一位工程师的抽卡逻辑文档；图片为 PokeAPI 官方立绘，需联网加载。</p>
   </section>
 </main>
 
 <nav class="tabbar">
-  <button data-tab="home" class="active">🎁 开包</button>
-  <button data-tab="dex">📖 卡册</button>
-  <button data-tab="rates">📊 概率</button>
+  <button data-tab="home" class="active">🎁 <span data-i18n="tabHome">开包</span></button>
+  <button data-tab="dex">📖 <span data-i18n="tabDex">卡册</span></button>
+  <button data-tab="rates">📊 <span data-i18n="tabRates">概率</span></button>
 </nav>
 
 <!-- 开包结果 -->
 <div id="pack-overlay" class="overlay">
   <div class="overlay-box">
-    <h2>开包结果</h2>
+    <h2 data-i18n="packResult">开包结果</h2>
     <p class="hint" id="pack-summary"></p>
     <div id="pack-cards" class="pack-grid"></div>
     <div class="overlay-actions">
-      <button id="flip-all-btn">全部翻开</button>
-      <button id="close-pack-btn" class="big-btn">收入卡册</button>
+      <button id="flip-all-btn" data-i18n="flipAll">全部翻开</button>
+      <button id="close-pack-btn" class="big-btn" data-i18n="collectBtn">收入卡册</button>
     </div>
   </div>
 </div>
@@ -105,11 +109,12 @@
     <h2 id="detail-name"></h2>
     <p id="detail-meta"></p>
     <p id="detail-owned"></p>
-    <button id="detail-close" class="big-btn">关闭</button>
+    <button id="detail-close" class="big-btn" data-i18n="closeBtn">关闭</button>
   </div>
 </div>
 
 <script src="pokedex.js"></script>
+<script src="i18n.js"></script>
 <script src="gacha.js"></script>
 <script src="app.js"></script>
 </body>
