@@ -19,9 +19,11 @@
       if (ctx.filterOwned === "MISSING" && owned) return;
       if (q && (r[1].indexOf(q) < 0 && r[2].toLowerCase().indexOf(q.toLowerCase()) < 0 && String(id) !== q)) return;
       var cell = document.createElement("div");
-      cell.className = "dex-cell " + PokeMem.tierClass(r[4]) + (owned ? "" : " missing");
+      var typeIds = owned ? PokeMem.Types.parseTypes(r[3]) : [];
+      cell.className = "dex-cell " + PokeMem.tierClass(r[4]) + (owned ? (typeIds[0] ? " tbg-" + typeIds[0] : "") : " missing");
       cell.innerHTML =
-        '<img src="' + imgUrl(id) + '" alt="' + dexName(r) + '" loading="lazy" onerror="this.style.display=\'none\'">' +
+        (owned && typeIds.length ? '<div class="card-types">' + typeIds.map(function (id) { return PokeMem.Types.typeChipHtml(id, PokeMem.lang()); }).join("") + "</div>" : "") +
+        '<div class="card-art"><img src="' + imgUrl(id) + '" alt="' + dexName(r) + '" loading="lazy" onerror="this.style.display=\'none\'"></div>' +
         '<div class="dex-no">#' + String(id).padStart(3, "0") + "</div>" +
         '<div class="dex-name">' + (owned ? dexName(r) : t("missingName")) + "</div>" +
         '<div class="dex-tier">' + PokeMem.mark(r[4]) + " " + r[4] + "</div>" +

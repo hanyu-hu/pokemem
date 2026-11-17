@@ -85,5 +85,14 @@ check("徽章无倍率时不缀 ×",
 check("徽章图标加载失败时只显示文字（onerror 隐藏）",
   Types.typeChipHtml("fire", "zh").indexOf("onerror=") >= 0);
 
+// ---- 卡面属性底色：15 属性在 style.css 里都有 tbg- 底色 ----
+const fs = require("fs");
+const css = fs.readFileSync(__dirname + "/../style.css", "utf8");
+check("15 属性都有卡面底色 tbg-*",
+  Types.TYPE_ORDER.every(function (id) { return css.indexOf(".tbg-" + id + " { --tb:") >= 0; }));
+check("卡面背景用属性底色变量",
+  css.indexOf(".card-face { background: var(--tb, #fff);") >= 0 &&
+  css.indexOf(".dex-cell { background: var(--tb, #fff);") >= 0);
+
 console.log(failures === 0 ? "全部通过 ✅" : failures + " 项失败 ❌");
 process.exit(failures === 0 ? 0 : 1);

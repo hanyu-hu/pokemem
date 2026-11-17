@@ -53,6 +53,7 @@ const state = Gacha.newState(1000000);
 [71, 40, 90, 65, 55, 88, 30].forEach((lv, i) => {
   Gacha.addToCollection(state, { id: 33, level: lv, hp: 100 + i, atk: 50 + i });
 });
+Gacha.addToCollection(state, { id: 1, level: 50, hp: 151, atk: 100 }); // #001 妙蛙种子（草、毒，双属性）1 张，验卡面双徽章
 state.trainer.candy = 5; // 升级测试用糖果
 sandbox.localStorage.setItem("pokemem-save-v1", JSON.stringify(state));
 // app.js 已拆成 js/ 模块（PR #3），按 index.html 里的加载顺序跑
@@ -73,6 +74,16 @@ run("js/boot.js"); // 启动：首次渲染（applyLang 会渲染卡册格子）
 const grid = els["collection-grid"];
 const cell = grid.children[32];
 check("卡册格子有 151 个格", grid.children.length === 151, "实际 " + grid.children.length);
+// 卡面：像一张真正的卡——左上角属性徽章 + 属性 pastel 底色 + 白色画框
+const cell001 = grid.children[0]; // #001 妙蛙种子（草、毒），已拥有
+check("已拥有格子按主属性染色（草）", cell001.className.indexOf("tbg-grass") >= 0, cell001.className);
+check("双属性格子左上角有两个属性徽章", (cell001.innerHTML.match(/type-chip/g) || []).length === 2);
+check("已拥有格子图片在白色画框里", cell001.innerHTML.indexOf("card-art") >= 0);
+const cell002 = grid.children[1]; // #002 妙蛙草，未拥有
+check("未拥有格子不染色（留白 + 剪影）", cell002.className.indexOf("tbg-") < 0 && cell002.className.indexOf("missing") >= 0, cell002.className);
+check("未拥有格子没有属性徽章", cell002.innerHTML.indexOf("card-types") < 0);
+const cell033 = grid.children[32]; // #033 尼多力诺（毒），已拥有
+check("单属性格子按主属性染色（毒）", cell033.className.indexOf("tbg-poison") >= 0, cell033.className);
 cell.listeners.click[0]();
 
 const html = els["detail-cards"].innerHTML;
