@@ -53,6 +53,16 @@ check("启动时执行上限", app.includes("enforceCap(state)"));
 check("tab 一行平行放（Lv 不再加粗单独成行）", !app.includes('"<b>Lv."'));
 check("启动时补生成旧卡数值", app.includes("repairLegacyCards(state, Math.random)"));
 check("补生成的旧卡在详情页注明", app.includes("repairedNote") && app.includes("c.repaired"));
+const html = fs.readFileSync(__dirname + "/../index.html", "utf8");
+check("顶栏 logo 是精灵球（纯 CSS）", html.includes("pokeball-logo"));
+check("页面有背景装饰层", html.includes("bg-decor") && html.includes("bg-ball") && html.includes("bg-star"));
+check("CSS 有精灵球浮动动画", css.includes("@keyframes ball-bob") && css.includes(".pokeball-logo"));
+check("CSS 有背景漂浮与星星闪烁", css.includes("@keyframes bg-float") && css.includes("@keyframes twinkle"));
+check("CSS 有开包按钮呼吸光晕", css.includes("@keyframes btn-glow"));
+check("CSS 有弹窗弹出动画", css.includes("@keyframes pop-in"));
+check("CSS 有 NEW 角标弹跳", css.includes("@keyframes badge-bounce"));
+check("卡片悬停会上浮", css.includes(".pack-card:hover") && css.includes(".dex-cell:hover"));
+check("顶栏是渐变圆角", css.includes("linear-gradient(120deg, #ff6b6b"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
