@@ -74,6 +74,11 @@ check("卡背不再是问号/CSS 手绘", !app.includes('<div class="card-back">
 const homeJs = fs.readFileSync(__dirname + "/../js/home.js", "utf8");
 check("开包页也不再渲染问号占位", !homeJs.includes('<div class="card-back">?</div>') && homeJs.includes('<div class="card-front"></div>'));
 check("卡背没有定高裁切和白色内描边", !css.includes("min-height: 232px") && !css.includes("inset 0 0 0 3px"));
+const homeJsText = fs.readFileSync(__dirname + "/../js/home.js", "utf8");
+check("开包用预览（drawPackPreview），不直接结算", homeJsText.includes("drawPackPreview") && !homeJsText.includes("Gacha.drawPack("));
+check("有关闭不算开过的翻牌计数", homeJsText.includes("packFlipped"));
+check("翻牌后按钮变入册", homeJsText.includes("updateCloseBtn") && homeJsText.includes('t("collectBtn")') && homeJsText.includes('t("closeBtn")'));
+check("没翻牌关闭不调提交", homeJsText.includes("ctx.packFlipped > 0") && homeJsText.includes("settlePack"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
