@@ -180,7 +180,8 @@
 
   // 抽一包的 10 张卡（只抽、不结算）：保底逻辑与原来 drawPack 的抽牌部分完全一致，
   // 但不改 state；返回的卡数组上挂 sinceSSR（抽完后的保底计数，供 settlePack 提交时写回）。
-  // NEW 判定在抽时算：开包前未拥有、且是本包内第一次出现的那张。
+  // NEW 判定在洗牌后算（Task 18）：开包前未拥有、且是展示顺序里第一次出现的那张，
+  // 角标落在第一张展示的卡上；之前先判定再洗牌，角标会落在最后一张展示的卡上。
   function drawCards(state, rng) {
     rng = rng || Math.random;
     var cards = [], i, hasSRPlus = false, sinceSSR = state.sinceSSR;
@@ -204,13 +205,13 @@
                level: st.level, hp: st.hp, atk: st.atk, pity: true };
     }
     cards.push(last);
-    // NEW 判定：开包前未拥有、且是本包内第一次出现的那张
+    var result = shuffle(cards, rng);
+    // NEW 判定（Task 18）：开包前未拥有、且是展示顺序里第一次出现的那张
     var seenInPack = {};
-    cards.forEach(function (c) {
+    result.forEach(function (c) {
       c.isNew = !state.collection[c.id] && !seenInPack[c.id];
       seenInPack[c.id] = true;
     });
-    var result = shuffle(cards, rng);
     result.sinceSSR = sinceSSR;
     return result;
   }
