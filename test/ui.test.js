@@ -79,7 +79,7 @@ check("CSS 有经验条填充（蓝紫渐变）", css.includes(".exp-fill") && c
 check("CSS 有训练师卡片/道具/改名样式",
   css.includes(".trainer-card") && css.includes(".trainer-items") && css.includes(".trainer-item.zero") && css.includes(".trainer-rename input"));
 const topbarLine = css.split("\n").filter(function (l) { return l.indexOf(".topbar {") === 0; })[0] || "";
-check("顶栏在弹窗之上（z-index 高于弹窗 20 和注册遮罩 30，低于轻提示 40）",
+check("顶栏在弹窗之上（z-index 高于弹窗 20，低于轻提示 40）",
   topbarLine.indexOf("z-index: 35") >= 0, topbarLine);
 const overlayShowLine = css.split("\n").filter(function (l) { return l.indexOf(".overlay.show {") === 0; })[0] || "";
 check("弹窗留出顶栏高度（盒子不被顶栏盖住）", overlayShowLine.indexOf("padding: 68px 12px 20px") >= 0, overlayShowLine);
