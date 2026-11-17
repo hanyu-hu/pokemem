@@ -5,8 +5,8 @@
   var ctx = PokeMem.ctx;
   function t(key, vars) { return PokeMem.t(key, vars); }
 
-  // 道具图：PokeAPI 精灵图，和宝可梦官方图同源（raw.githubusercontent，Task 19）
-  function itemImg(id) { return "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/" + id.replace(/_/g, "-") + ".png"; }
+  // 道具图：PokeAPI 精灵图，和宝可梦官方图共用 SPRITE_BASE（pokedex.js，Task 19）
+  function itemImg(id) { return SPRITE_BASE + "items/" + id.replace(/_/g, "-") + ".png"; }
 
   function renderTrainer() {
     var tr = Gacha.ensureTrainer(ctx.state);
