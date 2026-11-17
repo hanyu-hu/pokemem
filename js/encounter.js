@@ -48,8 +48,16 @@
   }
   function log(enc, entry) { enc.log.push(entry); }
   function activeMember(enc) { return enc.team[enc.activeIndex] || null; }
-  // 队员的最大 HP 实时读卡的数据（中途喂糖果升级会立刻反映，当前 HP 不变）
-  function memberMaxHp(m) { return m.card.hp; }
+  // 队员的最大 HP 存在队员身上（hpMax）；中途升级后要同步：战斗结算升级时 winRound 里同步，
+  // 糖果升级由界面在切回遭遇战页签时调 refreshTeamMaxHp 同步；当前 HP 不变。
+  function memberMaxHp(m) { return m.hpMax; }
+  // 把所有队员的最大 HP 按卡的当前数据刷一遍（糖果升级后用）；当前 HP 不变、不超过新的最大 HP
+  function refreshTeamMaxHp(enc) {
+    enc.team.forEach(function (m) {
+      m.hpMax = m.card.hp;
+      if (m.hp > m.hpMax) m.hp = m.hpMax;
+    });
+  }
   function isFainted(m) { return !m || m.hp <= 0; }
   function usableMembers(enc) { return enc.team.filter(function (m) { return m.hp > 0; }); }
   function teamMaxLevel(enc) {
@@ -59,7 +67,8 @@
   }
 
   // 组队：picks = [{speciesId, cardIndex}]，1–6 张，不重复、必须是已有的卡。
-  // 队员记的是卡的引用（结算时直接改这张卡），hp 是本场内的当前 HP（进场满血）。
+  // 队员记的是卡的引用（结算时直接改这张卡），hp 是本场内的当前 HP，hpMax 是最大 HP——
+  // 进场时满血，当前 HP 直接取最大 HP。
   function buildTeam(state, picks) {
     if (!Array.isArray(picks) || picks.length < 1) return { ok: false, error: "empty" };
     if (picks.length > 6) return { ok: false, error: "tooMany" };
@@ -77,7 +86,7 @@
       team.push({ speciesId: p.speciesId, cardIndex: p.cardIndex,
         name: row ? row[1] : "#" + p.speciesId, en: row ? row[2] : "",
         types: row ? row[3] : "", // 存档里的卡不存属性，从图鉴行缓存一份（战斗算克制用）
-        card: card, hp: card.hp });
+        card: card, hp: card.hp, hpMax: card.hp });
     }
     return { ok: true, team: team };
   }
@@ -150,6 +159,7 @@
     if (highLevel) enc.highLevelWins += 1;
     var levels = CardProgress.applyExpGain(state, active.speciesId, active.card,
       expGainFor(wild.level, active.card.level));
+    if (levels > 0) active.hpMax = active.card.hp; // 战斗结算升了级，最大 HP 跟着变，当前 HP 不变
     CardProgress.normalizeCardProgress(active.card);
     active.card.affection = (active.card.affection || 0) + 1;
     if (levels > 0) log(enc, { t: "levelup", name: active.name, from: active.card.level - levels, to: active.card.level });
@@ -274,7 +284,8 @@
     TIER_CATCH_MULT: TIER_CATCH_MULT, CHEST_ITEM_POOL: CHEST_ITEM_POOL,
     calcDamage: calcDamage, expGainFor: expGainFor, catchRate: catchRate,
     firstTypeOf: firstTypeOf, buildTeam: buildTeam, startEncounter: startEncounter,
-    activeMember: activeMember, memberMaxHp: memberMaxHp, isFainted: isFainted,
+    activeMember: activeMember, memberMaxHp: memberMaxHp, refreshTeamMaxHp: refreshTeamMaxHp,
+    isFainted: isFainted,
     usableMembers: usableMembers, teamMaxLevel: teamMaxLevel, attack: attack,
     switchMember: switchMember, chooseNext: chooseNext, useBall: useBall,
     retreat: retreat, continueRun: continueRun, endRun: endRun,

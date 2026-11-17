@@ -57,8 +57,9 @@ check("组队：7 张报错",
 check("组队：没这张卡报错", Encounter.buildTeam(s0, [{ speciesId: 1, cardIndex: 0 }]).error === "notOwned");
 const c0 = addCard(s0, 1, 50);
 const built = Encounter.buildTeam(s0, [{ speciesId: 1, cardIndex: c0 }]);
-check("组队：1 张合法，进场满血", built.ok && built.team.length === 1 &&
-  built.team[0].hp === built.team[0].card.hp && built.team[0].name === "妙蛙种子");
+check("组队：1 张合法，进场满血（当前 HP = 最大 HP）", built.ok && built.team.length === 1 &&
+  built.team[0].hp === built.team[0].card.hp && built.team[0].hpMax === built.team[0].card.hp &&
+  built.team[0].name === "妙蛙种子");
 check("组队：重复一张卡报错",
   Encounter.buildTeam(s0, [{ speciesId: 1, cardIndex: c0 }, { speciesId: 1, cardIndex: c0 }]).error === "duplicate");
 
@@ -227,6 +228,13 @@ const st51 = Gacha.statsForLevel(POKEDEX[5], 51);
 check("结算升级：50 级 49 经验 +1 → 51 级、经验 0、HP/攻击按 51 级重算",
   card11.level === 51 && card11.exp === 0 && card11.hp === st51.hp && card11.atk === st51.atk);
 check("结算升级：亲密度也 +1", card11.affection === 1);
+check("结算升级：队员最大 HP 跟着升到 51 级，当前 HP 不变（还是 184）",
+  e11.team[0].hpMax === st51.hp && e11.team[0].hp === 184);
+// 糖果升级的同步：直接改卡的最大 HP（模拟详情页喂糖果），刷一遍后队员最大 HP 跟上、当前 HP 不变
+card11.hp = st51.hp + 10;
+Encounter.refreshTeamMaxHp(e11);
+check("糖果升级同步：refreshTeamMaxHp 后最大 HP 跟上、当前 HP 不变",
+  e11.team[0].hpMax === st51.hp + 10 && e11.team[0].hp === 184);
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
