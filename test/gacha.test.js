@@ -231,5 +231,40 @@ Gacha.ensureTrainer(kept);
 check("已有训练师的字段原样保留", kept.trainer.name === "小智" && kept.trainer.level === 12 &&
   kept.trainer.exp === 37 && kept.trainer.crystals === 40 && kept.trainer.candy === 9);
 
+// 13. 结晶兑换卡包（Task 7）：10 颗换 1 包，不足拒绝，兑换前先结算计时器
+const ex1 = Gacha.newState(1000000); ex1.trainer.crystals = 100;
+check("100 结晶兑换：扣 10、包 +1、返回 1",
+  Gacha.exchangeCrystalsForPack(ex1, 1000000) === 1 && ex1.trainer.crystals === 90 && ex1.packs === 2);
+const ex2 = Gacha.newState(1000000); ex2.trainer.crystals = 9;
+check("9 结晶兑换：返回 0、不扣结晶、包数不变",
+  Gacha.exchangeCrystalsForPack(ex2, 1000000) === 0 && ex2.trainer.crystals === 9 && ex2.packs === 1);
+const ex3 = Gacha.newState(1000000); ex3.trainer.crystals = 10;
+check("正好 10 结晶兑换成功，结晶归零",
+  Gacha.exchangeCrystalsForPack(ex3, 1000000) === 1 && ex3.trainer.crystals === 0 && ex3.packs === 2);
+const ex4 = Gacha.newState(1000000); ex4.trainer.crystals = 0;
+check("0 结晶兑换：返回 0、包数不变",
+  Gacha.exchangeCrystalsForPack(ex4, 1000000) === 0 && ex4.packs === 1);
+// 计时器在兑换边界：2.5 小时后兑换，计时补 2 包 + 兑换 1 包，三个包都加上
+const ex5 = Gacha.newState(1000000); ex5.trainer.crystals = 100;
+const r5 = Gacha.exchangeCrystalsForPack(ex5, 1000000 + 2.5 * 3600 * 1000);
+check("倒计时归零边缘兑换：计时 2 包 + 兑换 1 包都到账",
+  r5 === 1 && ex5.packs === 4 && ex5.trainer.crystals === 90);
+check("兑换后计时器余 30 分钟（不重置、不丢时间）",
+  Gacha.msToNextPack(ex5, 1000000 + 2.5 * 3600 * 1000) === 30 * 60 * 1000);
+// 计时器结算不影响拒绝：余额不足时计时照常补发，兑换照常拒绝
+const ex6 = Gacha.newState(1000000); ex6.trainer.crystals = 5;
+const r6 = Gacha.exchangeCrystalsForPack(ex6, 1000000 + 1 * 3600 * 1000);
+check("余额不足但计时到点：计时补 1 包，兑换仍拒绝",
+  r6 === 0 && ex6.packs === 2 && ex6.trainer.crystals === 5);
+// 多次兑换：35 结晶连兑 3 次，第 4 次不足拒绝
+const ex7 = Gacha.newState(1000000); ex7.trainer.crystals = 35;
+Gacha.exchangeCrystalsForPack(ex7, 1000000);
+Gacha.exchangeCrystalsForPack(ex7, 1000000);
+Gacha.exchangeCrystalsForPack(ex7, 1000000);
+check("35 结晶连兑 3 次：剩 5 结晶、包 +3",
+  ex7.trainer.crystals === 5 && ex7.packs === 4);
+check("第 4 次余额不足拒绝",
+  Gacha.exchangeCrystalsForPack(ex7, 1000000) === 0 && ex7.trainer.crystals === 5);
+
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
