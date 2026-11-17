@@ -76,7 +76,7 @@
 - `index.html` / `style.css` — 页面与样式；`app.js` 是 Hanyu 留下的旧版 UI 副本，`index.html` 不加载它
 - `pokedex.js` — 151 只图鉴数据；`avatars.js` — 25 位主角头像（内嵌 WebP）；`i18n.js` — 中英翻译；`gacha.js` — 抽卡与训练师核心逻辑（浏览器和 Node 共用，可单测）；`card-progress.js` — 卡片经验值与亲密度（遭遇战用，浏览器和 Node 共用，可单测）
 - `js/` — 页面模块：`store`（存档）、`util`、`lang`（语言）、`types`（属性克制表与弱点）、`home`（首页/开包/兑换）、`dex`（卡册/详情）、`rates`（概率页）、`tabs`（页签）、`debug`（Debug 面板）、`register`（注册）、`trainer`（训练师页）、`boot`（启动）
-- `test/` — 7 个测试文件（`node test/*.test.js` 全跑）：`gacha`（概率/保底/数值/计时）、`smoke`（整站流程）、`detail-tabs`（详情 tab）、`i18n`（翻译）、`legacy-repair`（旧存档修复）、`ui`（界面检查）、`types`（属性克制与弱点）
+- `test/` — 9 个测试文件（`node test/*.test.js` 全跑）：`gacha`（概率/保底/数值/计时）、`smoke`（整站流程）、`detail-tabs`（详情 tab）、`i18n`（翻译）、`legacy-repair`（旧存档修复）、`ui`（界面检查）、`types`（属性克制与弱点）、`pack-close`（开包预览/关闭）、`pack-settle`（开包预览与提交）
 
 ## 待定（下一步可做）
 

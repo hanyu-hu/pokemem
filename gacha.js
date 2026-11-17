@@ -10,6 +10,8 @@
   "use strict";
   // 注意：这里不能写 typeof POKEDEX —— 本函数内 var POKEDEX 已提升，会屏蔽全局的 POKEDEX。
   // 浏览器里靠 pokedex.js 显式挂的 window.POKEDEX（顶层 const 不会自动挂 window），Node 里靠 require。
+  // Task 24：addToCollection 入册时调 root.CardProgress.normalizeCardProgress（卡片成长字段），
+  // 所以 card-progress.js 必须在第一次抽卡/入册前加载好（index.html 与各测试的加载列表里都在 gacha.js 之前）。
   var POKEDEX = root.POKEDEX || (typeof require !== "undefined" ? require("./pokedex.js").POKEDEX : []);
   if (!POKEDEX.length) throw new Error("PokeMem: 图鉴数据未加载，请确认 pokedex.js 在 gacha.js 之前引入");
   var PACK_SIZE = 10;
