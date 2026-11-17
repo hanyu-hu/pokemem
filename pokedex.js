@@ -82,4 +82,7 @@ const POKEDEX = [
 [151,"梦幻","Mew","超能力","MR",0.13,5,100,100],
 ];
 function imgUrl(id){ return "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/" + id + ".png"; }
+// 浏览器里顶层 const 不会挂到 window 上，gacha.js 靠 window.POKEDEX 拿不到数据，
+// 开包会在这里静默失败，所以必须显式挂上去。
+if (typeof window !== "undefined") { window.POKEDEX = POKEDEX; window.imgUrl = imgUrl; }
 if (typeof module !== "undefined") module.exports = { POKEDEX: POKEDEX, imgUrl: imgUrl };

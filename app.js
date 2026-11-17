@@ -1,6 +1,17 @@
 // PokeMem 网页端 v1 — UI 层（localStorage 存档，单机版）
 (function () {
   "use strict";
+  // 出错时在页面顶部显示红条，别再静默没反应
+  window.addEventListener("error", function (e) {
+    var bar = document.getElementById("error-bar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "error-bar";
+      bar.style.cssText = "background:#c00;color:#fff;padding:10px 14px;font-size:13px;position:sticky;top:0;z-index:99";
+      document.body.prepend(bar);
+    }
+    bar.textContent = "出错了：" + (e.message || "未知错误") + "，截图发我看一下。";
+  });
   var SAVE_KEY = "pokemem-save-v1";
   var state = load();
 

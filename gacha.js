@@ -8,7 +8,10 @@
 // 展示时把 10 张顺序打乱；与文档“抽完随机替换一张”的保底概率完全一致，且保底计数精确。
 (function (root) {
   "use strict";
+  // 注意：这里不能写 typeof POKEDEX —— 本函数内 var POKEDEX 已提升，会屏蔽全局的 POKEDEX。
+  // 浏览器里靠 pokedex.js 显式挂的 window.POKEDEX（顶层 const 不会自动挂 window），Node 里靠 require。
   var POKEDEX = root.POKEDEX || (typeof require !== "undefined" ? require("./pokedex.js").POKEDEX : []);
+  if (!POKEDEX.length) throw new Error("PokeMem: 图鉴数据未加载，请确认 pokedex.js 在 gacha.js 之前引入");
   var PACK_SIZE = 10;
   var PACK_INTERVAL_MS = 3600 * 1000; // 正式版：1 小时 1 包
   var SSR_PLUS = ["SSR", "UR", "MR"];
