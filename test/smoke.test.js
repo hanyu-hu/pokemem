@@ -10,7 +10,7 @@ const path = require("path");
 const GachaNode = require("../gacha.js"); // 仅用于造旧存档夹具
 
 const FILES = ["pokedex.js", "avatars.js", "i18n.js", "gacha.js", "js/store.js", "js/util.js",
-  "js/lang.js", "js/home.js", "js/dex.js", "js/rates.js", "js/tabs.js",
+  "js/lang.js", "js/types.js", "js/home.js", "js/dex.js", "js/rates.js", "js/tabs.js",
   "js/debug.js", "js/register.js", "js/trainer.js", "js/boot.js"];
 
 let failures = 0;
@@ -143,8 +143,6 @@ function registerSelectors(doc) {
   doc._bySelector["[data-tier-filter]"] = ["ALL", "MR", "UR", "SSR", "SR", "R", "N"].map(function (t) { return btn({ "data-tier-filter": t }); });
   doc._bySelector["[data-owned-filter]"] = ["ALL", "OWNED", "MISSING"].map(function (t) { return btn({ "data-owned-filter": t }); });
   doc._bySelector["[data-add-packs]"] = ["1", "10", "100"].map(function (n) { return btn({ "data-add-packs": n }); });
-  doc._bySelector["[data-add-crystals]"] = ["10", "100", "1000"].map(function (n) { return btn({ "data-add-crystals": n }); });
-  doc._bySelector["[data-add-candy]"] = ["10", "50", "100"].map(function (n) { return btn({ "data-add-candy": n }); });
   doc._bySelector["[data-i18n]"] = ["tabHome", "tabDex", "tabRates", "subtitle",
     "registerTitle", "registerDesc", "registerHint", "registerSubmit", "registerStart",
     "tabTrainer", "trainerCrystals", "trainerCandy", "trainerItems", "trainerRenameBtn"].map(function (k) {
@@ -270,6 +268,15 @@ check("A 卡册 151 格", $A("collection-grid").children.length === 151, "实际
 $A("collection-grid").children[0].click();
 check("A 点格子开详情", $A("detail-modal").classList.contains("show"));
 check("A 详情是 #001", $A("detail-name").textContent.indexOf("#001") === 0, $A("detail-name").textContent);
+check("A 详情属性是图标（草、毒）",
+  $A("detail-meta").innerHTML.indexOf("grass.svg") >= 0 && $A("detail-meta").innerHTML.indexOf("poison.svg") >= 0,
+  $A("detail-meta").innerHTML);
+check("A 详情弱点是图标（虫×4、火、冰、飞行、超能力）",
+  $A("detail-weakness").innerHTML.indexOf("弱点") >= 0 &&
+  $A("detail-weakness").innerHTML.indexOf("bug.svg") >= 0 &&
+  $A("detail-weakness").innerHTML.indexOf("×4") >= 0 &&
+  $A("detail-weakness").innerHTML.indexOf("psychic.svg") >= 0,
+  $A("detail-weakness").innerHTML);
 $A("detail-close").click();
 check("A 关闭详情", !$A("detail-modal").classList.contains("show"));
 
@@ -301,17 +308,6 @@ $A("exchange-btn").click();
 check("A 结晶不够时点兑换也没变化", ctxA.state.packs === 17 && ctxA.state.trainer.crystals === 5);
 ctxA.state.trainer.crystals = 90;
 A.PokeMem.renderHeader();
-
-var crystalsBefore = ctxA.state.trainer.crystals;
-byAttr(A.doc._bySelector["[data-add-crystals]"], "data-add-crystals", "100").click();
-check("A Debug +100 结晶", ctxA.state.trainer.crystals === crystalsBefore + 100
-  && $A("crystal-count").textContent === String(crystalsBefore + 100),
-  "结晶 " + ctxA.state.trainer.crystals);
-var candyBefore = ctxA.state.trainer.candy;
-byAttr(A.doc._bySelector["[data-add-candy]"], "data-add-candy", "50").click();
-check("A Debug +50 糖果", ctxA.state.trainer.candy === candyBefore + 50
-  && $A("trainer-candy").textContent === String(candyBefore + 50),
-  "糖果 " + ctxA.state.trainer.candy);
 
 $A("reset-save-btn").click();
 check("A 清空后回到 1 包", ctxA.state.packs === 1, "实际 " + ctxA.state.packs);
