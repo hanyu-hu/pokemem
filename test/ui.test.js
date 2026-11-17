@@ -197,6 +197,9 @@ check("场景卡与选队格子有样式（选中红框、未解锁变暗）",
 // 选队改版：同种只放一只、悬停选哪一只上场、6 个精灵球
 check("选队标题下面有 6 个精灵球槽、悬停选卡 tab 容器",
   html.includes('id="team-balls"') && html.includes('id="team-grid-wrap"') && html.includes('id="team-pick-tab"'));
+check("选队格子左上角属性标、右上角×几（已选的打勾）",
+  encUiJs.includes('"team-types"') && encUiJs.includes('"team-count"') && encUiJs.includes("typeIconHtml") &&
+  css.includes(".team-count") && css.includes(".team-cell .team-types"));
 check("精灵球开合样式（空球关着、选了打开、宝可梦放进去）",
   css.includes(".team-balls") && css.includes(".team-ball") && css.includes(".team-ball.open .ball-top") &&
   css.includes(".team-ball .ball-mon") && css.includes(".team-ball.open .ball-mon"));

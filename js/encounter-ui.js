@@ -94,10 +94,14 @@
       nm.className = "team-name";
       nm.textContent = PokeMem.dexName(row);
       b.appendChild(nm);
-      var chk = document.createElement("span");
-      chk.className = "team-check";
-      chk.textContent = picked ? "✓" : "";
-      b.appendChild(chk);
+      var types = document.createElement("div");
+      types.className = "team-types";
+      types.innerHTML = PokeMem.Types.parseTypes(row[3]).map(function (id) { return PokeMem.Types.typeIconHtml(id); }).join("");
+      b.appendChild(types);
+      var cnt = document.createElement("span");
+      cnt.className = "team-count" + (picked ? " selected" : "");
+      cnt.textContent = (picked ? "✓ " : "") + "×" + e.cards.length;
+      b.appendChild(cnt);
       b.addEventListener("click", function () { toggleSpecies(row[0]); });
       b.addEventListener("mouseenter", function () { showPickTab(row[0], b); });
       b.addEventListener("mouseleave", function (ev) {

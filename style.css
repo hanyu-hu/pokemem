@@ -182,9 +182,12 @@ button { font-family: inherit; }
 .team-cell.selected { border-color: #e3350d; background: #fff0ec; }
 .team-cell img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; }
 .team-name { font-size: 13px; font-weight: bold; color: #333; }
-.team-stat { font-size: 12px; color: #666; }
-.team-affection { font-size: 12px; color: #e3350d; }
-.team-check { position: absolute; top: 4px; right: 8px; font-size: 16px; font-weight: bold; color: #e3350d; }
+/* 格子左上角属性标（只要图标）、右上角×几（有几张卡，选了的打勾变红） */
+.team-cell .team-types { position: absolute; top: 4px; left: 6px; display: flex; gap: 2px; z-index: 2; }
+.team-cell .team-types .type-chip { background: transparent; border: none; padding: 0; }
+.team-cell .team-types .type-chip img { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,.95); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.team-count { position: absolute; top: 4px; right: 6px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; font-weight: bold; padding: 2px 7px; border-radius: 999px; z-index: 2; }
+.team-count.selected { background: #e3350d; }
 /* 队伍精灵球：6 个槽；空球关着，选了的球打开、宝可梦像摆件一样站在球上；点已选的取消 */
 .team-balls { display: flex; justify-content: center; gap: 10px; margin: 12px 0 24px; }
 .team-ball { position: relative; width: 60px; height: 110px; padding: 0; border: none; background: none; cursor: default; flex-shrink: 0; }

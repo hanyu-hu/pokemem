@@ -104,6 +104,12 @@ const cellOf = function (id) {
 const ballAt = function (i) { return ballsBox.children[i]; };
 const ballImg = function (ball) { return ball.children.filter(function (c) { return c.tagName === "IMG"; })[0]; };
 const ballLv = function (ball) { return ball.children.filter(function (c) { return c.className === "ball-lv"; })[0]; };
+const countOf = function (id) {
+  return cellOf(id).children.filter(function (c) { return c.className.indexOf("team-count") === 0; })[0];
+};
+const typesOf = function (id) {
+  return cellOf(id).children.filter(function (c) { return c.className === "team-types"; })[0];
+};
 const click = function (el) { el.listeners.click[0](); };
 const mouseenter = function (el) { el.listeners.mouseenter[0](); };
 
@@ -111,18 +117,23 @@ check("6 个球槽一开始都关着",
   ballsBox.children.length === 6 &&
   ballsBox.children.every(function (b) { return !b.classList.contains("open") && !ballImg(b); }));
 check("格子每种一个（7 个种 = 7 个格子，不再每张卡一个）", grid.children.length === 7, "实际 " + grid.children.length);
-check("格子上只有形象、名字和勾，没有 Lv/HP/攻击/亲密度",
-  cellOf(1).children.length === 3 &&
-  cellOf(1).children.every(function (c) { return c.className !== "team-stat" && c.className !== "team-affection"; }));
+check("格子上有形象、名字、左上角属性标、右上角×几，没有 Lv/HP/攻击/亲密度",
+  cellOf(1).children.length === 4 &&
+  cellOf(1).children.every(function (c) { return c.className !== "team-stat" && c.className !== "team-affection"; }) &&
+  countOf(1).textContent === "×4" && countOf(4).textContent === "×5" && countOf(7).textContent === "×1");
+check("左上角属性标只要图标（妙蛙种子草+毒、小火龙只有火）",
+  typesOf(1).innerHTML.indexOf("grass.svg") >= 0 && typesOf(1).innerHTML.indexOf("poison.svg") >= 0 &&
+  typesOf(4).innerHTML.indexOf("fire.svg") >= 0 && typesOf(4).innerHTML.indexOf("poison.svg") < 0);
 check("一开始已选 0 / 6", els["team-pick-count"].textContent === "已选 0 / 6", els["team-pick-count"].textContent);
 check("一开始两个出征按钮都禁用",
   els["encounter-start-btn"].disabled === true && els["encounter-deploy-btn"].disabled === true);
 
-// 点 #001 格子：默认上该种等级最高的卡（Lv.96）、1 号球打开
+// 点 #001 格子：默认上该种等级最高的卡（Lv.96）、1 号球打开、右上角×几打勾变红
 click(cellOf(1));
 check("点格子上该种最高等级的卡", picks().length === 1 && picks()[0].speciesId === 1 && picks()[0].cardIndex === 0);
 check("1 号球打开、里面是 #001", ballAt(0).classList.contains("open") && ballImg(ballAt(0)).src.indexOf("/1.png") >= 0);
 check("球下写着 Lv.96", ballLv(ballAt(0)).textContent === "Lv.96", ballLv(ballAt(0)).textContent);
+check("选了的格子右上角×几打勾变红", countOf(1).textContent === "✓ ×4" && countOf(1).classList.contains("selected"), countOf(1).textContent);
 check("已选 1 / 6", els["team-pick-count"].textContent === "已选 1 / 6");
 check("两个出征按钮都可用",
   els["encounter-start-btn"].disabled === false && els["encounter-deploy-btn"].disabled === false);
