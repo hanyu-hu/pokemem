@@ -136,7 +136,8 @@
       if (r < 0) { tier = participating[i]; break; }
     }
     var entry = pool[tier];
-    var row = entry.rows[Math.floor(rng() * entry.rows.length)];
+    // rng() 理论上返回 [0,1)，但一个返回 1 的 rng 会让下标越界——夹一下保底
+    var row = entry.rows[Math.min(entry.rows.length - 1, Math.floor(rng() * entry.rows.length))];
     return makeWild(row, entry.level);
   }
 

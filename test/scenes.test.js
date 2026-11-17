@@ -11,7 +11,6 @@ function check(name, cond, detail) {
   if (!cond) failures++;
 }
 function seq(vals) { let i = 0; return function () { return vals[i++ % vals.length]; }; }
-function lcg(seed) { let x = seed; return function () { x = (x * 9301 + 49297) % 233280; return x / 233280; }; }
 
 // 1. 场景表：9 个、id 唯一、解锁与基础等级
 check("9 个场景", Scenes.SCENES.length === 9);
