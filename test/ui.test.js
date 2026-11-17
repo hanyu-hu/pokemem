@@ -152,6 +152,10 @@ check("开包卡面按主属性染色 + 徽章行 + 画框", homeJs.includes("tb
 check("卡册格子按主属性染色 + 徽章行 + 画框", dexJs.includes("tbg-") && dexJs.includes("card-types") && dexJs.includes("card-art"));
 check("卡面属性标只要图标不要字", homeJs.includes("typeIconHtml") && dexJs.includes("typeIconHtml"));
 check("卡面属性标是圆形图标（白圈 + 阴影）", css.includes(".card-types .type-chip img") && css.includes("width: 20px") && css.includes("rgba(255,255,255,.95)"));
+check("详情图有剪影 + 问号容器", html.includes('id="detail-art"') && html.includes('class="detail-unknown">?</span>'));
+check("未拥有详情剪影样式（同格子剪影）", css.includes(".detail-art.missing img") && css.includes("filter: brightness(0)"));
+check("问号会摇晃", css.includes("@keyframes q-wobble") && css.includes(".detail-unknown"));
+check("详情页未拥有走剪影分支", dexJs.includes("detail-art") && dexJs.includes("var missing = !owned") && dexJs.includes('t("missingName")'));
 check("旧的纯文字 typeLabel 已删", !fs.readFileSync(__dirname + "/../js/lang.js", "utf8").includes("typeLabel") && !dexJs.includes("typeLabel"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");

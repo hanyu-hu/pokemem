@@ -38,13 +38,22 @@
   function showDetail(r) {
     currentRow = r;
     var owned = ctx.state.collection[r[0]];
-    var primary = dexName(r), secondary = PokeMem.lang() === "en" ? r[1] : r[2];
+    var missing = !owned;
+    // 未拥有：名字、属性、弱点一律不泄露；图是剪影 + 摇晃的问号
+    $("detail-art").className = "detail-art" + (missing ? " missing" : "");
+    var primary = missing ? t("missingName") : dexName(r);
+    var secondary = missing ? t("missingName") : (PokeMem.lang() === "en" ? r[1] : r[2]);
     $("detail-img").src = imgUrl(r[0]);
     $("detail-img").style.display = "";
     $("detail-name").textContent = "#" + String(r[0]).padStart(3, "0") + " " + primary + "（" + secondary + "）";
     var typeIds = PokeMem.Types.parseTypes(r[3]);
-    $("detail-meta").innerHTML = typeIds.map(function (id) { return PokeMem.Types.typeChipHtml(id, PokeMem.lang()); }).join(" ") + "　·　" + PokeMem.mark(r[4]) + " " + r[4] + " " + tierLabel(r[4]) + "　·　" + t("perCardRate") + " " + r[5] + "%";
-    $("detail-weakness").innerHTML = t("detailWeakness") + "：" + PokeMem.Types.weaknessesFor(typeIds).map(function (w) { return PokeMem.Types.typeChipHtml(w.type, PokeMem.lang(), w.mult); }).join(" ");
+    var metaParts = [];
+    if (!missing) metaParts.push(typeIds.map(function (id) { return PokeMem.Types.typeChipHtml(id, PokeMem.lang()); }).join(" "));
+    metaParts.push(PokeMem.mark(r[4]) + " " + r[4] + " " + tierLabel(r[4]));
+    metaParts.push(t("perCardRate") + " " + r[5] + "%");
+    $("detail-meta").innerHTML = metaParts.join("　·　");
+    if (missing) { $("detail-weakness").innerHTML = ""; $("detail-weakness").style.display = "none"; }
+    else { $("detail-weakness").style.display = ""; $("detail-weakness").innerHTML = t("detailWeakness") + "：" + PokeMem.Types.weaknessesFor(typeIds).map(function (w) { return PokeMem.Types.typeChipHtml(w.type, PokeMem.lang(), w.mult); }).join(" "); }
     $("detail-owned").textContent = owned
       ? t("detailOwned", { n: owned.count, lv: owned.bestLv, hp: owned.bestHp, atk: owned.bestAtk })
       : t("detailMissing");

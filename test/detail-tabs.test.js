@@ -121,5 +121,19 @@ els["detail-levelup-btn"].listeners.click[0]();
 check("自然升到 100 级", sandbox.PokeMem.ctx.detailSelected.level === 100);
 check("满级时按钮禁用", els["detail-levelup-btn"].disabled === true);
 
+// ---------- 未拥有详情：剪影 + 摇晃的问号，不泄露名字/属性/弱点 ----------
+cell002.listeners.click[0](); // #002 妙蛙草，未拥有
+check("未拥有详情：图是剪影（detail-art 带 missing）", els["detail-art"].className.indexOf("missing") >= 0, els["detail-art"].className);
+check("未拥有详情：名字是问号不泄露", els["detail-name"].textContent.indexOf("？？？") >= 0 && els["detail-name"].textContent.indexOf("妙蛙草") < 0, els["detail-name"].textContent);
+check("未拥有详情：meta 不带属性徽章", els["detail-meta"].innerHTML.indexOf("type-chip") < 0, els["detail-meta"].innerHTML);
+check("未拥有详情：meta 还留稀有度和概率", els["detail-meta"].innerHTML.indexOf("稀有") >= 0 && els["detail-meta"].innerHTML.indexOf("单只概率") >= 0);
+check("未拥有详情：弱点行藏起来", els["detail-weakness"].innerHTML === "" && els["detail-weakness"].style.display === "none");
+check("未拥有详情：没有卡片 tab", els["detail-cards"].innerHTML === "");
+cell.listeners.click[0](); // 再点回 #033 尼多力诺（已拥有）
+check("已拥有详情：剪影去掉", els["detail-art"].className.indexOf("missing") < 0, els["detail-art"].className);
+check("已拥有详情：名字是真名", els["detail-name"].textContent.indexOf("尼多力诺") >= 0, els["detail-name"].textContent);
+check("已拥有详情：meta 有属性徽章", els["detail-meta"].innerHTML.indexOf("type-chip") >= 0);
+check("已拥有详情：弱点行显示", els["detail-weakness"].innerHTML.indexOf("弱点") >= 0 && els["detail-weakness"].style.display === "");
+
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
