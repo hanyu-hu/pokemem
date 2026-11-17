@@ -3,6 +3,18 @@
 // 状态放在调用方（浏览器里是 PokeMem.ctx.encounter），函数拿 (enc, state, rng) 操作它；
 // 调用方负责在每次行动后保存存档（PokeMem.save()），因为每轮结算的经验 / 亲密度 /
 // 抓到的卡要立即写进存档，刷新不丢；只有宝箱（结晶 / 道具）会因为中途刷新而丢。
+// 战报（enc.log，Task 28 的战斗界面按这个渲染）：
+//   {t:"spawn", id, name, level, tier}      刷出下一只野生
+//   {t:"hit", by:"player"|"wild", attacker, defender, damage, crit, mult, defHp, defHpMax}
+//   {t:"faint", name}                       出战卡倒下
+//   {t:"ko", name}                          野生被击倒
+//   {t:"catch", name, ball, success}        扔球结果
+//   {t:"switch", name}                      交换 / 免费选下一只
+//   {t:"levelup", name, from, to}           出战卡结算升了级
+//   {t:"prompt"}                            进战间选择（继续前进 / 结束遭遇战）
+//   {t:"chest", crystals, items}            宝箱结算
+//   {t:"wipe"}                              6 只全倒下（团灭）
+//   {t:"retreat"}                           撤退
 // 依赖：图鉴 POKEDEX（pokedex.js）、属性模块 Types（js/types.js）、
 // 场景模块 Scenes（js/scenes.js）、抽卡核心 Gacha（gacha.js）、
 // 卡片成长 CardProgress（card-progress.js）。加载顺序见 index.html。

@@ -2,8 +2,6 @@
 // 检查：组队、开场、伤害、先手、反击、交换、捕捉、结算、宝箱、撤退、战间选择
 const { POKEDEX } = require("../pokedex.js");
 const Gacha = require("../gacha.js");
-const CardProgress = require("../card-progress.js");
-const Types = require("../js/types.js");
 const Scenes = require("../js/scenes.js");
 const Encounter = require("../js/encounter.js");
 
@@ -25,7 +23,6 @@ function setBalls(state, items) {
   const t = Gacha.ensureTrainer(state);
   Object.keys(items).forEach(k => { t.items[k] = items[k]; });
 }
-function seq(vals) { let i = 0; return function () { return vals[i++ % vals.length]; }; }
 function noCrit() { return 0.99; } // 不暴击（野生暴击率最高 30% 也 roll 不中）
 
 // 1. 伤害公式：50 级攻击 100，打中性 33、×2 是 67、×4 是 133、×0 保底 1、暴击 ×2
