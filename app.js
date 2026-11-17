@@ -1,4 +1,4 @@
-// PokeMem 网页端 v1.3 — UI 层（localStorage 存档，单机版，中英切换）
+// PokeMem 网页端 v1.7 — UI 层（localStorage 存档，单机版，中英切换）
 (function () {
   "use strict";
   var SAVE_KEY = "pokemem-save-v1";
@@ -225,6 +225,8 @@
       '<div class="cd-stat"><span>' + t("atkLabel") + "</span><b>" + detailSelected.atk + "</b></div>" +
       "</div></div>";
     if (owned.cards.length > 5) html += '<p class="rule">' + t("top5Note", { n: owned.cards.length }) + "</p>";
+    var repairedN = owned.cards.filter(function (c) { return c.repaired; }).length;
+    if (repairedN > 0) html += '<p class="rule">' + t("repairedNote", { n: repairedN }) + "</p>";
     if (owned.legacy > 0) html += '<p class="rule">' + t("legacyNote", { n: owned.legacy }) + "</p>";
     box.innerHTML = html;
     box.querySelectorAll(".card-tab").forEach(function (btn) {
@@ -326,6 +328,7 @@
 
   // ---------- 启动 ----------
   Gacha.migrateCollection(state); // v1.5 前的旧存档只有汇总，补一条明细卡后保存
+  Gacha.repairLegacyCards(state, Math.random); // v1.7：旧卡按公式补生成数值（原始数值已无法找回），只跑一次
   save();
   applyLang();
   tick();

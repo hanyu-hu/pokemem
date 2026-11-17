@@ -108,5 +108,25 @@ check("迁移补 1 条明细卡（最高数值）", e4.cards.length === 1 && e4.
 check("迁移余 2 张记 legacy", e4.legacy === 2);
 check("迁移可重复跑（幂等）", (Gacha.migrateCollection(s6), e4.cards.length === 1 && e4.legacy === 2));
 
+// 10. 旧卡补生成：v1.5 前的 8 张小火龙（只有汇总）→ 迁移后补 7 张，Lv 不超过原最高 94
+const s7 = Gacha.newState(0);
+s7.collection[4] = { count: 8, bestLv: 94, bestHp: 264, bestAtk: 190 };
+Gacha.migrateCollection(s7);
+check("迁移后 1 条明细 + 7 张 legacy", s7.collection[4].cards.length === 1 && s7.collection[4].legacy === 7);
+const seedVals = [0.1, 0.9, 0.5, 0.3, 0.7, 0.2, 0.8]; let si = 0;
+const seededRng = function () { return seedVals[si++ % seedVals.length]; };
+const repaired = Gacha.repairLegacyCards(s7, seededRng);
+const e4b = s7.collection[4];
+const row4 = Gacha.entry(4);
+check("补生成 7 张旧卡", repaired === 7 && e4b.cards.length === 8 && e4b.legacy === 0);
+check("补生成的卡 Lv 在最低等级～94 之间",
+  e4b.cards.filter(c => c.repaired).every(c => c.level >= row4[6] && c.level <= 94));
+check("补生成的卡 HP/攻击符合公式",
+  e4b.cards.filter(c => c.repaired).every(c =>
+    c.hp === Math.floor((2 * row4[7] + 93) * c.level / 100) + c.level + 10 &&
+    c.atk === Math.floor((2 * row4[8] + 93) * c.level / 100) + 5));
+check("最高等级仍是 94（补生成没超过原最高）", e4b.bestLv === 94 && e4b.cards.filter(c => c.level === 94).length === 1);
+check("补生成只跑一次", Gacha.repairLegacyCards(s7, seededRng) === 0);
+
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);

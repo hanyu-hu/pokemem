@@ -46,12 +46,14 @@
   }
 
   // 等级与数值（文档第 4 节 / 表格“等级公式”页，满个体 15、努力拉满，93 = 2*15+63）
+  function statsForLevel(row, lv) {
+    return { level: lv,
+      hp: Math.floor((2 * row[7] + 93) * lv / 100) + lv + 10,
+      atk: Math.floor((2 * row[8] + 93) * lv / 100) + 5 };
+  }
   function rollStats(row, rng) {
-    var minLv = row[6], hpBase = row[7], atkBase = row[8];
-    var lv = randInt(minLv, 100, rng);
-    var hp = Math.floor((2 * hpBase + 93) * lv / 100) + lv + 10;
-    var atk = Math.floor((2 * atkBase + 93) * lv / 100) + 5;
-    return { level: lv, hp: hp, atk: atk };
+    var lv = randInt(row[6], 100, rng);
+    return statsForLevel(row, lv);
   }
 
   // 抽一张：处理 50 抽 SSR 保底；更新并返回新的 sinceSSR
@@ -98,6 +100,29 @@
       }
       if (typeof e.legacy !== "number") e.legacy = 0;
     });
+  }
+
+  // v1.7 补救：v1.5 之前抽的旧卡只有总数，没有每张的 Lv/HP/攻击，原始数值已无法找回。
+  // 为了让详情页的 tab 能显示（上限 5 张、取 Lv 最高），按公式给旧卡重新随机生成数值：
+  // 等级在最低等级～原最高等级之间随机（不超过原最高等级，所以最高等级那张不变），
+  // HP/攻击按同一公式算。补生成的卡打 repaired 标记，详情页会注明。只跑一次（legacy 清零后不再跑）。
+  function repairLegacyCards(state, rng) {
+    rng = rng || Math.random;
+    var repaired = 0;
+    Object.keys(state.collection).forEach(function (id) {
+      var e = state.collection[id];
+      var n = e.legacy || 0;
+      if (!n || !e.cards) return;
+      var row = entry(Number(id));
+      for (var i = 0; i < n; i++) {
+        var lv = randInt(row[6], Math.max(row[6], e.bestLv), rng);
+        var st = statsForLevel(row, lv);
+        e.cards.push({ level: st.level, hp: st.hp, atk: st.atk, pulledAt: 0, repaired: true });
+        repaired++;
+      }
+      e.legacy = 0;
+    });
+    return repaired;
   }
 
   // 开一包（10 张），含 10 连保底；调用前由 UI 保证 packs > 0
@@ -165,7 +190,8 @@
     drawFromPool: drawFromPool, drawAny: drawAny, rollStats: rollStats, drawCard: drawCard,
     drawPack: drawPack, newState: newState, grantDuePacks: grantDuePacks,
     msToNextPack: msToNextPack, tierTotals: tierTotals, ownedCount: ownedCount,
-    addToCollection: addToCollection, migrateCollection: migrateCollection };
+    addToCollection: addToCollection, migrateCollection: migrateCollection,
+    repairLegacyCards: repairLegacyCards };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   root.Gacha = api;
 })(typeof window !== "undefined" ? window : globalThis);

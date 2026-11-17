@@ -48,6 +48,8 @@ check("启动时迁移旧存档", app.includes("migrateCollection(state)"));
 check("详情左侧是 tab 栏（每张卡一个 tab）", app.includes("card-tab") && app.includes("detailSelected"));
 check("tab 上限 5 张，取 Lv 最高", app.includes("slice(0, 5)") && app.includes("b.level - a.level"));
 check("超 5 张有提示文案", app.includes("top5Note"));
+check("启动时补生成旧卡数值", app.includes("repairLegacyCards(state, Math.random)"));
+check("补生成的旧卡在详情页注明", app.includes("repairedNote") && app.includes("c.repaired"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
