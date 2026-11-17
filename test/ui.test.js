@@ -47,7 +47,8 @@ check("app.js 有排序状态（Lv/HP/攻击）", app.includes('detailSort') && 
 check("启动时迁移旧存档", app.includes("migrateCollection(state)"));
 check("详情左侧是 tab 栏（每张卡一个 tab）", app.includes("card-tab") && app.includes("detailSelected"));
 check("tab 上限 5 张，取 Lv 最高", app.includes("slice(0, 5)") && app.includes("b.level - a.level"));
-check("详情页有上限提示（超过 5 张会被去掉）", app.includes("capNote") && app.includes("droppedNote"));
+check("详情页有上限提示（超过 5 张会被去掉）", app.includes("capNote"));
+check("详情页不再显示已去掉几张", !app.includes("droppedNote"));
 check("启动时执行上限", app.includes("enforceCap(state)"));
 check("tab 一行平行放（Lv 不再加粗单独成行）", !app.includes('"<b>Lv."'));
 check("启动时补生成旧卡数值", app.includes("repairLegacyCards(state, Math.random)"));

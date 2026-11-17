@@ -63,7 +63,7 @@ check("Lv94 那张在 tab 里（原最高等级保留）", html.includes("Lv.94"
 const tabLevels = [...html.matchAll(/Lv\.(\d+)/g)].map(m => parseInt(m[1], 10));
 check("tab 的 Lv 都不超过 94", tabLevels.every(lv => lv <= 94), "tab Lv: " + tabLevels.join(","));
 check("上限提示出现（超过 5 张会被去掉）", html.includes("每只宝可梦最多保留 5 张卡"));
-check("注明已去掉 3 张", html.includes("已去掉 3 张"));
+check("不再显示已去掉几张", !html.includes("已去掉"));
 check("注明 4 张是补生成的（7 张里 3 张被上限去掉）", html.includes("其中 4 张旧卡数值是补生成的"));
 check("不再显示旧卡无明细的提示", !html.includes("无单独数值"));
 

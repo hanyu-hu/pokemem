@@ -225,7 +225,6 @@
       '<div class="cd-stat"><span>' + t("atkLabel") + "</span><b>" + detailSelected.atk + "</b></div>" +
       "</div></div>";
     html += '<p class="rule">' + t("capNote") + "</p>";
-    if (owned.droppedCount > 0) html += '<p class="rule">' + t("droppedNote", { n: owned.droppedCount }) + "</p>";
     var repairedN = owned.cards.filter(function (c) { return c.repaired; }).length;
     if (repairedN > 0) html += '<p class="rule">' + t("repairedNote", { n: repairedN }) + "</p>";
     if (owned.legacy > 0) html += '<p class="rule">' + t("legacyNote", { n: owned.legacy }) + "</p>";

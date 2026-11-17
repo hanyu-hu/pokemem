@@ -68,7 +68,7 @@ check("左边恰好 5 个 tab", tabCount === 5, "实际 " + tabCount + " 个");
 check("tab 默认 Lv 从高到低", html.indexOf("Lv.90") < html.indexOf("Lv.88") && html.indexOf("Lv.88") < html.indexOf("Lv.71"));
 check("默认选中 Lv 最高那张（右侧详情 Lv 90）", html.includes('<div class="cd-stat"><span>Lv</span><b>90</b></div>'));
 check("上限提示出现（超过 5 张会被去掉）", html.includes("每只宝可梦最多保留 5 张卡"));
-check("注明已去掉 2 张", html.includes("已去掉 2 张"));
+check("不再显示已去掉几张", !html.includes("已去掉"));
 check("标题是全部卡牌（5 张）", html.includes("全部卡牌（5 张）"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
