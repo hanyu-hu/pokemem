@@ -1,7 +1,8 @@
 // PokeMem 遭遇战选队验证：node test/encounter-ui.test.js
-// 用最小 DOM 桩跑真实的 js/ 模块：每种一个格子（只放形象和名字）、
-// 悬停选哪一只上场、6 个精灵球摆件（空球关着、选了打开、宝可梦站在球上、点已选的取消）、
-// 出征按钮（精灵球下面一个、最下面一个）、满 6 只拦第 7 种。
+// 用最小 DOM 桩跑真实的 js/ 模块：每种一个格子（左上角属性标、右上角×几、底色按属性染）、
+// 同种可以选多张（格子再点上下一只、tab 里点具体哪张）、悬停选哪一只上场（亲密度:0）、
+// 6 个精灵球摆件（空球关着、选了打开、宝可梦站在球上、点已选的取消）、
+// 出征按钮（精灵球下面一个、最下面一个）、满 6 只拦第 7 只。
 const fs = require("fs");
 const vm = require("vm");
 
@@ -112,6 +113,7 @@ const typesOf = function (id) {
 };
 const click = function (el) { el.listeners.click[0](); };
 const mouseenter = function (el) { el.listeners.mouseenter[0](); };
+const pickedIds = function () { return picks().map(function (p) { return p.speciesId + ":" + p.cardIndex; }).join(","); };
 
 check("6 个球槽一开始都关着",
   ballsBox.children.length === 6 &&
@@ -124,11 +126,13 @@ check("格子上有形象、名字、左上角属性标、右上角×几，没�
 check("左上角属性标只要图标（妙蛙种子草+毒、小火龙只有火）",
   typesOf(1).innerHTML.indexOf("grass.svg") >= 0 && typesOf(1).innerHTML.indexOf("poison.svg") >= 0 &&
   typesOf(4).innerHTML.indexOf("fire.svg") >= 0 && typesOf(4).innerHTML.indexOf("poison.svg") < 0);
+check("格子底色按主属性染成卡片色（妙蛙种子草色、小火龙火色）",
+  cellOf(1).classList.contains("tbg-grass") && cellOf(4).classList.contains("tbg-fire"));
 check("一开始已选 0 / 6", els["team-pick-count"].textContent === "已选 0 / 6", els["team-pick-count"].textContent);
 check("一开始两个出征按钮都禁用",
   els["encounter-start-btn"].disabled === true && els["encounter-deploy-btn"].disabled === true);
 
-// 点 #001 格子：默认上该种等级最高的卡（Lv.96）、1 号球打开、右上角×几打勾变红
+// 点 #001 格子：默认上该种等级最高的卡（Lv.96）、1 号球打开
 click(cellOf(1));
 check("点格子上该种最高等级的卡", picks().length === 1 && picks()[0].speciesId === 1 && picks()[0].cardIndex === 0);
 check("1 号球打开、里面是 #001", ballAt(0).classList.contains("open") && ballImg(ballAt(0)).src.indexOf("/1.png") >= 0);
@@ -138,14 +142,22 @@ check("已选 1 / 6", els["team-pick-count"].textContent === "已选 1 / 6");
 check("两个出征按钮都可用",
   els["encounter-start-btn"].disabled === false && els["encounter-deploy-btn"].disabled === false);
 
-// 点格子本身取消
+// 再点格子：上第二只一样的（Lv.82）、第三只（Lv.28）、第四只（Lv.8）；都选上了再点就提示
 click(cellOf(1));
-check("再点格子取消选择", picks().length === 0);
-check("球关回去", !ballAt(0).classList.contains("open") && !ballImg(ballAt(0)));
-check("已选 0 / 6", els["team-pick-count"].textContent === "已选 0 / 6");
+check("再点格子：上第二只一样的", picks().length === 2 && pickedIds() === "1:0,1:1", pickedIds());
+click(cellOf(1));
+check("再点格子：上第三只一样的", picks().length === 3 && pickedIds() === "1:0,1:1,1:2", pickedIds());
+click(cellOf(1));
+check("再点格子：上第四只一样的", picks().length === 4 && pickedIds() === "1:0,1:1,1:2,1:3", pickedIds());
+click(cellOf(1));
+check("这种的卡都选上了再点：弹提示、不再加",
+  picks().length === 4 && els["toast"].textContent.indexOf("这种宝可梦的卡都选上了") >= 0, els["toast"].textContent);
 
-// 悬停选卡 tab：移到 #001 格子上，右边浮出该种的 4 张卡（带数值）
-click(cellOf(1)); // 先把 Lv.96 选上
+// 点球取消一只
+click(ballAt(0));
+check("点球取消一只", picks().length === 3 && pickedIds() === "1:1,1:2,1:3", pickedIds());
+
+// 悬停选卡 tab：移到 #001 格子上，右边浮出该种的 4 张卡（带数值、亲密度直接写点数）
 mouseenter(cellOf(1));
 check("悬停后 tab 显示", tab.style.display === "block");
 check("tab 标题是种名 + 选哪一只上场",
@@ -154,32 +166,29 @@ check("tab 标题是种名 + 选哪一只上场",
 check("tab 列出该种 4 张卡、带数值",
   tab.children.length === 5 && tab.children[3].textContent.indexOf("Lv.28") >= 0 && tab.children[3].textContent.indexOf("HP") >= 0,
   "实际 " + tab.children.length + " 个子元素");
-check("tab 里已选的那张打勾", tab.children[1].classList.contains("selected") && tab.children[1].textContent.indexOf("✓") >= 0);
-click(tab.children[3]); // 点 Lv.28 那张：同种换只
-check("tab 里点 Lv.28：换成这张", picks().length === 1 && picks()[0].cardIndex === 2);
+check("tab 里亲密度直接写点数（亲密度:0，不带 Lv.）",
+  tab.children[1].textContent.indexOf("亲密度:0") >= 0 && tab.children[1].textContent.indexOf("亲密度 Lv.") < 0,
+  tab.children[1].textContent);
+check("tab 里已选的三张打勾", [1, 2, 3].every(function (i) { return tab.children[i + 1].classList.contains("selected"); }));
+click(tab.children[1]); // 点 Lv.96（没选上的那张）：加进来
+check("tab 里点没选上的：加进来", picks().length === 4 && pickedIds() === "1:1,1:2,1:3,1:0", pickedIds());
 check("点完 tab 收起来", tab.style.display === "none");
-check("球里换成 Lv.28", ballLv(ballAt(0)).textContent === "Lv.28");
-mouseenter(cellOf(1)); // 再打开 tab，点已选的那张取消
-click(tab.children[3]);
-check("tab 里点已选的取消选择", picks().length === 0);
+mouseenter(cellOf(1));
+click(tab.children[2]); // 点 Lv.82（已选上的那张）：取消
+check("tab 里点已选上的：取消", picks().length === 3 && pickedIds() === "1:2,1:3,1:0", pickedIds());
 
-// 点球取消
-click(cellOf(1));
-click(ballAt(0));
-check("点球取消选择", picks().length === 0 && !ballAt(0).classList.contains("open"));
-
-// 满 6 只：第 7 种被拦
+// 清掉 #001 的三只（每次都点 1 号球——取消后后面的球会往前补位）
+for (var k = 0; k < 3; k++) click(ballAt(0));
+check("点球清掉三只", picks().length === 0);
 [1, 4, 7, 10, 13, 16].forEach(function (id) { click(cellOf(id)); });
 check("选满 6 只", picks().length === 6, "实际 " + picks().length);
 check("6 个球都打开", ballsBox.children.every(function (b) { return b.classList.contains("open"); }));
 check("已选 6 / 6", els["team-pick-count"].textContent === "已选 6 / 6");
+click(cellOf(1));
+check("满员时再点同种的第二只也被拦",
+  picks().length === 6 && els["toast"].textContent.indexOf("最多选 6 张卡") >= 0, els["toast"].textContent);
 click(cellOf(25));
 check("第 7 种被拦、弹提示", picks().length === 6 && els["toast"].textContent.indexOf("最多选 6 张卡") >= 0, els["toast"].textContent);
-check("满员时在 tab 里换同种不受限", (function () {
-  mouseenter(cellOf(1));
-  click(tab.children[2]); // #001 换 Lv.82
-  return picks().length === 6 && picks().filter(function (p) { return p.speciesId === 1; })[0].cardIndex === 1;
-})());
 
 // 精灵球下面的出征按钮：点它开始遭遇战、队伍清空、切到进行中面板
 click(els["encounter-deploy-btn"]);

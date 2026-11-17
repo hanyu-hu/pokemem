@@ -178,8 +178,8 @@ button { font-family: inherit; }
 .scene-types .type-chip img { width: 22px; height: 22px; }
 .scene-base { font-size: 12px; color: #666; }
 .scene-lock { font-size: 12px; color: #e3350d; margin-top: 4px; }
-.team-cell { position: relative; background: #fff; border: 2px solid transparent; border-radius: 14px; padding: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.08); text-align: center; }
-.team-cell.selected { border-color: #e3350d; background: #fff0ec; }
+.team-cell { position: relative; background: var(--tb, #fff); border: 2px solid transparent; border-radius: 14px; padding: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.08); text-align: center; }
+.team-cell.selected { border-color: #e3350d; }
 .team-cell img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; }
 .team-name { font-size: 13px; font-weight: bold; color: #333; }
 /* 格子左上角属性标（只要图标）、右上角×几（有几张卡，选了的打勾变红） */
@@ -206,9 +206,9 @@ button { font-family: inherit; }
 .team-ball .ball-lv { position: absolute; left: 0; right: 0; bottom: 0; font-size: 11px; color: #666; text-align: center; }
 /* 悬停选卡 tab：格子右边浮出，列出该种的全部卡 */
 .team-grid-wrap { position: relative; }
-.team-pick-tab { position: absolute; width: 220px; background: #fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 10px; z-index: 30; }
-.team-pick-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 6px; }
-.team-pick-opt { display: block; width: 100%; text-align: left; padding: 8px 10px; margin-top: 4px; border: 1px solid #f0c9c0; background: #fff; border-radius: 10px; font-size: 13px; cursor: pointer; }
+.team-pick-tab { position: absolute; width: 190px; background: #fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 8px; z-index: 30; }
+.team-pick-title { font-size: 12px; font-weight: bold; color: #333; margin-bottom: 6px; }
+.team-pick-opt { display: block; width: 100%; text-align: left; padding: 6px 8px; margin-top: 4px; border: 1px solid #f0c9c0; background: #fff; border-radius: 10px; font-size: 12px; cursor: pointer; }
 .team-pick-opt:hover { background: #fff0ec; }
 .team-pick-opt.selected { border-color: #e3350d; background: #fff0ec; font-weight: bold; }
 @media (max-width: 480px) {

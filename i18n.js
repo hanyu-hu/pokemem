@@ -102,14 +102,15 @@ var I18N = {
     encounterTeamFull: "最多选 6 张卡",
     encounterNeedTeam: "先选至少 1 张卡",
     encounterStartFail: "开始失败，请重新选队",
-    encounterAffection: "亲密度 Lv.{level}",
     encounterCurrentScene: "场景：{name}",
     encounterCurrentWild: "当前野生：{name} Lv.{level}（HP {hp}/{hpMax}）",
     encounterCurrentWins: "已胜 {n} 场",
     encounterAbandonBtn: "放弃这场遭遇战",
     encounterAbandonNote: "放弃等于中途离开，宝箱就没了",
     encounterPickTitle: "选哪一只上场",
-    encounterTeamBallRemove: "点一下取消选择"
+    encounterTeamBallRemove: "点一下取消选择",
+    encounterAffectionPoints: "亲密度:{n}",
+    encounterSpeciesAllPicked: "这种宝可梦的卡都选上了"
   },
   en: {
     subtitle: "Pokémon 151 Gacha",
@@ -212,14 +213,15 @@ var I18N = {
     encounterTeamFull: "Pick at most 6 cards",
     encounterNeedTeam: "Pick at least 1 card first",
     encounterStartFail: "Couldn't start — please re-pick your team",
-    encounterAffection: "Bond Lv.{level}",
     encounterCurrentScene: "Scene: {name}",
     encounterCurrentWild: "Current wild: {name} Lv.{level} (HP {hp}/{hpMax})",
     encounterCurrentWins: "{n} wins so far",
     encounterAbandonBtn: "Abandon this encounter",
     encounterAbandonNote: "Abandoning is like leaving mid-run — the chest is lost",
     encounterPickTitle: "Pick one to send out",
-    encounterTeamBallRemove: "Click to remove"
+    encounterTeamBallRemove: "Click to remove",
+    encounterAffectionPoints: "Bond: {n}",
+    encounterSpeciesAllPicked: "All cards of this Pokémon are picked"
   }
 };
 var TYPE_EN = { "草": "Grass", "毒": "Poison", "火": "Fire", "水": "Water", "虫": "Bug", "飞行": "Flying", "一般": "Normal", "电": "Electric", "地面": "Ground", "格斗": "Fighting", "超能力": "Psychic", "岩石": "Rock", "冰": "Ice", "幽灵": "Ghost", "龙": "Dragon" };

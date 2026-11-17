@@ -180,9 +180,9 @@ check("场景卡有名字、属性图标、野生起始等级、解锁条件",
 check("选队格子每种一个格子、格子上不显示数值（数值在悬停 tab 里选）",
   encUiJs.includes('"team-cell"') && encUiJs.includes("每种一个格子") &&
   !encUiJs.includes('"team-stat"') && !encUiJs.includes('"team-affection"') &&
-  encUiJs.includes("encounterAffection")); // tab 里仍显示亲密度
-check("点格子默认上该种最高等级的卡、再点取消",
-  encUiJs.includes("toggleSpecies") && encUiJs.includes("等级最高的卡"));
+  encUiJs.includes("encounterAffectionPoints")); // tab 里仍显示亲密度（直接写点数）
+check("点格子默认上该种最高等级的卡、再点上第二只一样的",
+  encUiJs.includes("toggleSpecies") && encUiJs.includes("再上一只一样的"));
 check("选队最多 6 张、超了弹提示",
   encUiJs.includes("picks.length >= 6") && encUiJs.includes("encounterTeamFull"));
 check("开始按钮没选队时禁用、开始后记进 ctx.encounter",
@@ -216,8 +216,18 @@ check("两个出征按钮都接同一个开始动作、没选队时都禁用",
   encUiJs.includes('$("encounter-deploy-btn").disabled = dis'));
 check("悬停选卡 tab 样式",
   css.includes(".team-pick-tab") && css.includes(".team-pick-opt") && css.includes(".team-pick-opt.selected"));
-check("同种只放一只：再点同种的另一张直接换过来",
-  encUiJs.includes("同种只放一只") && encUiJs.includes("picks[same] ="));
+check("同种可以选多张：点格子再上一只一样的，都选上了就提示",
+  encUiJs.includes("再上一只一样的") && encUiJs.includes("encounterSpeciesAllPicked") &&
+  !encUiJs.includes("同种只放一只"));
+check("选卡 tab 改小（窄一点、字体小一点）",
+  css.includes("width: 190px") && /\.team-pick-title\s*\{[^}]*font-size:\s*12px/.test(css) &&
+  /\.team-pick-opt\s*\{[^}]*font-size:\s*12px/.test(css) && encUiJs.includes("tabW = 190"));
+check("格子底色按主属性染成卡片色（选了也不盖掉底色）",
+  encUiJs.includes('"tbg-"') && css.includes(".team-cell { position: relative; background: var(--tb, #fff);") &&
+  css.includes(".team-cell.selected { border-color: #e3350d; }"));
+check("tab 里亲密度直接写点数（亲密度:0）",
+  encUiJs.includes("encounterAffectionPoints") &&
+  fs.readFileSync(__dirname + "/../i18n.js", "utf8").includes('encounterAffectionPoints: "亲密度:{n}"'));
 check("悬停格子右边浮出该种的全部卡",
   encUiJs.includes("showPickTab") && encUiJs.includes("mouseenter") && encUiJs.includes("encounterPickTitle"));
 check("点球取消选择",

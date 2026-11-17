@@ -80,8 +80,10 @@
       if (!e || !e.cards || !e.cards.length) return;
       var picked = null;
       for (var i = 0; i < teamPicks().length; i++) if (teamPicks()[i].speciesId === row[0]) { picked = teamPicks()[i]; break; }
+      var typeIds = PokeMem.Types.parseTypes(row[3]);
       var b = document.createElement("button");
       b.classList.add("team-cell");
+      b.classList.add("tbg-" + typeIds[0]); // 底色按主属性染成卡片色
       if (picked) b.classList.add("selected");
       b.setAttribute("data-species", row[0]);
       var img = document.createElement("img");
@@ -96,7 +98,7 @@
       b.appendChild(nm);
       var types = document.createElement("div");
       types.className = "team-types";
-      types.innerHTML = PokeMem.Types.parseTypes(row[3]).map(function (id) { return PokeMem.Types.typeIconHtml(id); }).join("");
+      types.innerHTML = typeIds.map(function (id) { return PokeMem.Types.typeIconHtml(id); }).join("");
       b.appendChild(types);
       var cnt = document.createElement("span");
       cnt.className = "team-count" + (picked ? " selected" : "");
@@ -114,13 +116,15 @@
     renderTeamBalls();
     $("team-pick-count").textContent = t("encounterTeamCount", { n: teamPicks().length });
   }
-  // 点格子 = 整个种开关：已选就取消，没选就上该种等级最高的卡（想换低等级的去 tab 里点）
+  // 点格子 = 再上一只一样的：上该种等级最高的还没选上的卡；这种的卡都选上了就提示
   function toggleSpecies(speciesId) {
-    var picks = teamPicks();
-    for (var i = 0; i < picks.length; i++) if (picks[i].speciesId === speciesId) { togglePick(speciesId, picks[i].cardIndex); return; }
     var e = ctx.state.collection[speciesId];
-    var best = 0;
-    for (var j = 1; j < e.cards.length; j++) if (e.cards[j].level > e.cards[best].level) best = j;
+    var best = -1;
+    for (var j = 0; j < e.cards.length; j++) {
+      if (pickIndex(speciesId, j) >= 0) continue; // 这张已经在队里了
+      if (best < 0 || e.cards[j].level > e.cards[best].level) best = j;
+    }
+    if (best < 0) { PokeMem.showToast(t("encounterSpeciesAllPicked")); return; }
     togglePick(speciesId, best);
   }
   // 队伍精灵球：6 个槽；空球关着，选了的球打开、宝可梦放进去；点已选的取消
@@ -174,12 +178,12 @@
       if (sel) b.classList.add("selected");
       b.setAttribute("data-card", idx);
       b.textContent = "Lv." + c.level + "　HP " + c.hp + " · " + t("atkLabel") + " " + c.atk +
-        "　" + t("encounterAffection", { level: CardProgress.affectionLevel(c.affection) }) + (sel ? "　✓" : "");
+        "　" + t("encounterAffectionPoints", { n: c.affection || 0 }) + (sel ? "　✓" : "");
       b.addEventListener("click", function () { togglePick(speciesId, idx); hidePickTab(); });
       tab.appendChild(b);
     });
     // 定位：格子右边；靠右边缘时改放左边
-    var tabW = 220;
+    var tabW = 190;
     var left = (cell.offsetLeft || 0) + (cell.offsetWidth || 0) + 8;
     var wrap = $("team-grid-wrap");
     if (wrap && left + tabW > (wrap.offsetWidth || 0)) left = Math.max(0, (cell.offsetLeft || 0) - tabW - 8);
@@ -193,13 +197,8 @@
     var i = pickIndex(speciesId, cardIndex);
     if (i >= 0) picks.splice(i, 1); // 点已选的 = 取消
     else {
-      var same = -1;
-      for (var j = 0; j < picks.length; j++) if (picks[j].speciesId === speciesId) { same = j; break; }
-      if (same >= 0) picks[same] = { speciesId: speciesId, cardIndex: cardIndex }; // 同种只放一只：换成这张
-      else {
-        if (picks.length >= 6) { PokeMem.showToast(t("encounterTeamFull")); return; }
-        picks.push({ speciesId: speciesId, cardIndex: cardIndex });
-      }
+      if (picks.length >= 6) { PokeMem.showToast(t("encounterTeamFull")); return; }
+      picks.push({ speciesId: speciesId, cardIndex: cardIndex });
     }
     renderTeam();
     updateStartBtn();
