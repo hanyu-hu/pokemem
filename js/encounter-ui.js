@@ -9,19 +9,31 @@
 
   function selectedScene() { return ctx.encounterScene || "grassland"; }
   function teamPicks() { return ctx.teamPicks || (ctx.teamPicks = []); }
+  // 队伍是 6 个固定球槽：picks[i] 是第 i 个球里的卡（null = 空球）；
+  // 新卡放第一个空球，取消只空出那一个球、别的球不动
+  var openTabSpecies = null; // 悬停 tab 正开着哪个种（null = 没开）
+  function pickCount() {
+    var n = 0;
+    teamPicks().forEach(function (p) { if (p) n++; });
+    return n;
+  }
   function pickIndex(speciesId, cardIndex) {
     var picks = teamPicks();
-    for (var i = 0; i < picks.length; i++) if (picks[i].speciesId === speciesId && picks[i].cardIndex === cardIndex) return i;
+    for (var i = 0; i < picks.length; i++) {
+      var p = picks[i];
+      if (p && p.speciesId === speciesId && p.cardIndex === cardIndex) return i;
+    }
     return -1;
   }
-  // 选队里可能有脏引用（清空存档后卡没了）：渲染前先清掉
+  // 选队里可能有脏引用（清空存档后卡没了）：渲染前先清掉（只空出那个球，不挪别的球）
   function prunePicks() {
     var picks = teamPicks();
-    var kept = picks.filter(function (p) {
+    for (var i = 0; i < picks.length; i++) {
+      var p = picks[i];
+      if (!p) continue;
       var e = ctx.state.collection[p.speciesId];
-      return e && e.cards && e.cards[p.cardIndex];
-    });
-    if (kept.length !== picks.length) ctx.teamPicks = kept;
+      if (!e || !e.cards || !e.cards[p.cardIndex]) picks[i] = null;
+    }
   }
 
   function renderEncounter() {
@@ -72,14 +84,16 @@
   }
   // 选队格子：每种一个格子（只放形象和名字，Lv / HP / 攻击 / 亲密度不在格子上显示，在悬停 tab 里选）
   function renderTeam() {
-    hidePickTab(); // 格子重绘后悬停 tab 的锚点就没了，先收起来
     var grid = $("team-grid");
     grid.innerHTML = "";
     POKEDEX.forEach(function (row) {
       var e = ctx.state.collection[row[0]];
       if (!e || !e.cards || !e.cards.length) return;
       var picked = null;
-      for (var i = 0; i < teamPicks().length; i++) if (teamPicks()[i].speciesId === row[0]) { picked = teamPicks()[i]; break; }
+      for (var i = 0; i < teamPicks().length; i++) {
+        var q = teamPicks()[i];
+        if (q && q.speciesId === row[0]) { picked = q; break; }
+      }
       var typeIds = PokeMem.Types.parseTypes(row[3]);
       var b = document.createElement("button");
       b.classList.add("team-cell");
@@ -104,7 +118,7 @@
       cnt.className = "team-count" + (picked ? " selected" : "");
       cnt.textContent = (picked ? "✓ " : "") + "×" + e.cards.length;
       b.appendChild(cnt);
-      b.addEventListener("click", function () { toggleSpecies(row[0]); });
+      b.addEventListener("click", function () { showPickTab(row[0], b); }); // 点格子 = 打开 tab（不直接选）
       b.addEventListener("mouseenter", function () { showPickTab(row[0], b); });
       b.addEventListener("mouseleave", function (ev) {
         var tab = $("team-pick-tab");
@@ -114,18 +128,14 @@
       grid.appendChild(b);
     });
     renderTeamBalls();
-    $("team-pick-count").textContent = t("encounterTeamCount", { n: teamPicks().length });
-  }
-  // 点格子 = 再上一只一样的：上该种等级最高的还没选上的卡；这种的卡都选上了就提示
-  function toggleSpecies(speciesId) {
-    var e = ctx.state.collection[speciesId];
-    var best = -1;
-    for (var j = 0; j < e.cards.length; j++) {
-      if (pickIndex(speciesId, j) >= 0) continue; // 这张已经在队里了
-      if (best < 0 || e.cards[j].level > e.cards[best].level) best = j;
+    $("team-pick-count").textContent = t("encounterTeamCount", { n: pickCount() });
+    if (openTabSpecies) { // tab 开着：格子重绘后按新格子重新锚定，选项的勾跟着刷新
+      var cell = null;
+      for (var i = 0; i < grid.children.length; i++) {
+        if (grid.children[i].getAttribute("data-species") === String(openTabSpecies)) { cell = grid.children[i]; break; }
+      }
+      if (cell) showPickTab(openTabSpecies, cell);
     }
-    if (best < 0) { PokeMem.showToast(t("encounterSpeciesAllPicked")); return; }
-    togglePick(speciesId, best);
   }
   // 队伍精灵球：6 个槽；空球关着，选了的球打开、宝可梦放进去；点已选的取消
   function renderTeamBalls() {
@@ -159,8 +169,9 @@
     }
     return b;
   }
-  // 悬停选卡 tab：鼠标移到格子上，右边浮出该种宝可梦的全部卡，点一只上场
+  // 悬停选卡 tab：鼠标移到格子上（或点格子），右边浮出该种宝可梦的全部卡，点一只上场
   function showPickTab(speciesId, cell) {
+    openTabSpecies = speciesId;
     var tab = $("team-pick-tab");
     tab.innerHTML = "";
     var row = POKEDEX[speciesId - 1];
@@ -179,7 +190,7 @@
       b.setAttribute("data-card", idx);
       b.textContent = "Lv." + c.level + "　HP " + c.hp + " · " + t("atkLabel") + " " + c.atk +
         "　" + t("encounterAffectionPoints", { n: c.affection || 0 }) + (sel ? "　✓" : "");
-      b.addEventListener("click", function () { togglePick(speciesId, idx); hidePickTab(); });
+      b.addEventListener("click", function () { togglePick(speciesId, idx); }); // 点选项只切换、不收 tab，可以连续选
       tab.appendChild(b);
     });
     // 定位：格子右边；靠右边缘时改放左边
@@ -191,31 +202,34 @@
     tab.style.top = (cell.offsetTop || 0) + "px";
     tab.style.display = "block";
   }
-  function hidePickTab() { $("team-pick-tab").style.display = "none"; }
+  function hidePickTab() { openTabSpecies = null; $("team-pick-tab").style.display = "none"; }
   function togglePick(speciesId, cardIndex) {
     var picks = teamPicks();
     var i = pickIndex(speciesId, cardIndex);
-    if (i >= 0) picks.splice(i, 1); // 点已选的 = 取消
+    if (i >= 0) picks[i] = null; // 点已选的 = 取消，只空出这一个球
     else {
-      if (picks.length >= 6) { PokeMem.showToast(t("encounterTeamFull")); return; }
-      picks.push({ speciesId: speciesId, cardIndex: cardIndex });
+      var slot = -1;
+      for (var j = 0; j < 6; j++) if (!picks[j]) { slot = j; break; } // 新卡放第一个空球
+      if (slot < 0) { PokeMem.showToast(t("encounterTeamFull")); return; }
+      picks[slot] = { speciesId: speciesId, cardIndex: cardIndex };
     }
     renderTeam();
     updateStartBtn();
   }
   function updateStartBtn() {
-    var dis = teamPicks().length < 1;
+    var dis = pickCount() < 1;
     $("encounter-start-btn").disabled = dis;
     $("encounter-deploy-btn").disabled = dis;
   }
   // 开始：建一场遭遇战、记在 ctx.encounter 里（Task 28 的战斗屏接手）；开场不写存档
   function startRun() {
-    var picks = teamPicks();
+    var picks = teamPicks().filter(function (p) { return !!p; }); // 空球不进战斗队伍
     if (picks.length < 1) { PokeMem.showToast(t("encounterNeedTeam")); return; }
     var res = PokeMem.Encounter.startEncounter(ctx.state, selectedScene(), picks, Math.random);
     if (!res.ok) { PokeMem.showToast(t("encounterStartFail")); return; }
     ctx.encounter = res.encounter;
     ctx.teamPicks = [];
+    openTabSpecies = null;
     var w = res.encounter.wild;
     PokeMem.showToast(t("encounterStarted", { name: PokeMem.lang() === "en" ? w.en : w.name, level: w.level }));
     renderEncounter();

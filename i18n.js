@@ -109,8 +109,7 @@ var I18N = {
     encounterAbandonNote: "放弃等于中途离开，宝箱就没了",
     encounterPickTitle: "选哪一只上场",
     encounterTeamBallRemove: "点一下取消选择",
-    encounterAffectionPoints: "亲密度:{n}",
-    encounterSpeciesAllPicked: "这种宝可梦的卡都选上了"
+    encounterAffectionPoints: "亲密度:{n}"
   },
   en: {
     subtitle: "Pokémon 151 Gacha",
@@ -220,8 +219,7 @@ var I18N = {
     encounterAbandonNote: "Abandoning is like leaving mid-run — the chest is lost",
     encounterPickTitle: "Pick one to send out",
     encounterTeamBallRemove: "Click to remove",
-    encounterAffectionPoints: "Bond: {n}",
-    encounterSpeciesAllPicked: "All cards of this Pokémon are picked"
+    encounterAffectionPoints: "Bond: {n}"
   }
 };
 var TYPE_EN = { "草": "Grass", "毒": "Poison", "火": "Fire", "水": "Water", "虫": "Bug", "飞行": "Flying", "一般": "Normal", "电": "Electric", "地面": "Ground", "格斗": "Fighting", "超能力": "Psychic", "岩石": "Rock", "冰": "Ice", "幽灵": "Ghost", "龙": "Dragon" };

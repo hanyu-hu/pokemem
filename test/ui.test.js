@@ -181,12 +181,12 @@ check("选队格子每种一个格子、格子上不显示数值（数值在悬�
   encUiJs.includes('"team-cell"') && encUiJs.includes("每种一个格子") &&
   !encUiJs.includes('"team-stat"') && !encUiJs.includes('"team-affection"') &&
   encUiJs.includes("encounterAffectionPoints")); // tab 里仍显示亲密度（直接写点数）
-check("点格子默认上该种最高等级的卡、再点上第二只一样的",
-  encUiJs.includes("toggleSpecies") && encUiJs.includes("再上一只一样的"));
+check("点格子只打开 tab、不直接选",
+  encUiJs.includes("点格子 = 打开 tab") && !encUiJs.includes("toggleSpecies"));
 check("选队最多 6 张、超了弹提示",
-  encUiJs.includes("picks.length >= 6") && encUiJs.includes("encounterTeamFull"));
+  encUiJs.includes("slot < 0") && encUiJs.includes("encounterTeamFull"));
 check("开始按钮没选队时禁用、开始后记进 ctx.encounter",
-  encUiJs.includes("teamPicks().length < 1") && encUiJs.includes("ctx.encounter = res.encounter"));
+  encUiJs.includes("pickCount() < 1") && encUiJs.includes("ctx.encounter = res.encounter"));
 check("进行中面板有场景、当前野生、已胜场数和放弃按钮",
   encUiJs.includes("encounterCurrentScene") && encUiJs.includes("encounterCurrentWild") &&
   encUiJs.includes("encounterCurrentWins") && encUiJs.includes("abandonRun"));
@@ -216,9 +216,15 @@ check("两个出征按钮都接同一个开始动作、没选队时都禁用",
   encUiJs.includes('$("encounter-deploy-btn").disabled = dis'));
 check("悬停选卡 tab 样式",
   css.includes(".team-pick-tab") && css.includes(".team-pick-opt") && css.includes(".team-pick-opt.selected"));
-check("同种可以选多张：点格子再上一只一样的，都选上了就提示",
-  encUiJs.includes("再上一只一样的") && encUiJs.includes("encounterSpeciesAllPicked") &&
-  !encUiJs.includes("同种只放一只"));
+check("同种可以选多张：tab 里点具体哪张",
+  encUiJs.includes("togglePick") && !encUiJs.includes("toggleSpecies") &&
+  !encUiJs.includes("encounterSpeciesAllPicked"));
+check("点 tab 选项不收 tab、可以连续选",
+  encUiJs.includes("不收 tab") && !encUiJs.includes("togglePick(speciesId, idx); hidePickTab()"));
+check("球是固定槽：点哪只取消哪只、新卡放第一个空球",
+  encUiJs.includes("第一个空球") && encUiJs.includes("picks[i] = null") && encUiJs.includes("picks[slot]"));
+check("出征时空球不进战斗队伍",
+  encUiJs.includes("filter(function (p) { return !!p; })"));
 check("选卡 tab 改小（窄一点、字体小一点）",
   css.includes("width: 190px") && /\.team-pick-title\s*\{[^}]*font-size:\s*12px/.test(css) &&
   /\.team-pick-opt\s*\{[^}]*font-size:\s*12px/.test(css) && encUiJs.includes("tabW = 190"));

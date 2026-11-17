@@ -1,7 +1,7 @@
 // PokeMem 遭遇战选队验证：node test/encounter-ui.test.js
 // 用最小 DOM 桩跑真实的 js/ 模块：每种一个格子（左上角属性标、右上角×几、底色按属性染）、
-// 同种可以选多张（格子再点上下一只、tab 里点具体哪张）、悬停选哪一只上场（亲密度:0）、
-// 6 个精灵球摆件（空球关着、选了打开、宝可梦站在球上、点已选的取消）、
+// 点格子只打开选卡 tab（不直接选）、tab 里点选项不收 tab（可以连续选）、
+// 球是 6 个固定槽（点哪只取消哪只、别的球不动，新卡放第一个空球）、
 // 出征按钮（精灵球下面一个、最下面一个）、满 6 只拦第 7 只。
 const fs = require("fs");
 const vm = require("vm");
@@ -99,6 +99,10 @@ const grid = els["team-grid"];
 const ballsBox = els["team-balls"];
 const tab = els["team-pick-tab"];
 const picks = function () { return sandbox.PokeMem.ctx.teamPicks; };
+const nPicked = function () { return picks().filter(function (p) { return !!p; }).length; };
+const pickedIds = function () {
+  return picks().filter(function (p) { return !!p; }).map(function (p) { return p.speciesId + ":" + p.cardIndex; }).join(",");
+};
 const cellOf = function (id) {
   return grid.children.filter(function (c) { return c.getAttribute("data-species") === String(id); })[0];
 };
@@ -111,9 +115,10 @@ const countOf = function (id) {
 const typesOf = function (id) {
   return cellOf(id).children.filter(function (c) { return c.className === "team-types"; })[0];
 };
+const tabOpt = function (i) { return tab.children[i + 1]; }; // 选项按 Lv 从高到低排，children[0] 是标题
 const click = function (el) { el.listeners.click[0](); };
 const mouseenter = function (el) { el.listeners.mouseenter[0](); };
-const pickedIds = function () { return picks().map(function (p) { return p.speciesId + ":" + p.cardIndex; }).join(","); };
+const pickViaTab = function (id, optIdx) { mouseenter(cellOf(id)); click(tabOpt(optIdx)); };
 
 check("6 个球槽一开始都关着",
   ballsBox.children.length === 6 &&
@@ -132,34 +137,9 @@ check("一开始已选 0 / 6", els["team-pick-count"].textContent === "已选 0 
 check("一开始两个出征按钮都禁用",
   els["encounter-start-btn"].disabled === true && els["encounter-deploy-btn"].disabled === true);
 
-// 点 #001 格子：默认上该种等级最高的卡（Lv.96）、1 号球打开
+// 点 #001 格子：只打开 tab，不直接选
 click(cellOf(1));
-check("点格子上该种最高等级的卡", picks().length === 1 && picks()[0].speciesId === 1 && picks()[0].cardIndex === 0);
-check("1 号球打开、里面是 #001", ballAt(0).classList.contains("open") && ballImg(ballAt(0)).src.indexOf("/1.png") >= 0);
-check("球下写着 Lv.96", ballLv(ballAt(0)).textContent === "Lv.96", ballLv(ballAt(0)).textContent);
-check("选了的格子右上角×几打勾变红", countOf(1).textContent === "✓ ×4" && countOf(1).classList.contains("selected"), countOf(1).textContent);
-check("已选 1 / 6", els["team-pick-count"].textContent === "已选 1 / 6");
-check("两个出征按钮都可用",
-  els["encounter-start-btn"].disabled === false && els["encounter-deploy-btn"].disabled === false);
-
-// 再点格子：上第二只一样的（Lv.82）、第三只（Lv.28）、第四只（Lv.8）；都选上了再点就提示
-click(cellOf(1));
-check("再点格子：上第二只一样的", picks().length === 2 && pickedIds() === "1:0,1:1", pickedIds());
-click(cellOf(1));
-check("再点格子：上第三只一样的", picks().length === 3 && pickedIds() === "1:0,1:1,1:2", pickedIds());
-click(cellOf(1));
-check("再点格子：上第四只一样的", picks().length === 4 && pickedIds() === "1:0,1:1,1:2,1:3", pickedIds());
-click(cellOf(1));
-check("这种的卡都选上了再点：弹提示、不再加",
-  picks().length === 4 && els["toast"].textContent.indexOf("这种宝可梦的卡都选上了") >= 0, els["toast"].textContent);
-
-// 点球取消一只
-click(ballAt(0));
-check("点球取消一只", picks().length === 3 && pickedIds() === "1:1,1:2,1:3", pickedIds());
-
-// 悬停选卡 tab：移到 #001 格子上，右边浮出该种的 4 张卡（带数值、亲密度直接写点数）
-mouseenter(cellOf(1));
-check("悬停后 tab 显示", tab.style.display === "block");
+check("点格子只打开 tab、不直接选", tab.style.display === "block" && nPicked() === 0);
 check("tab 标题是种名 + 选哪一只上场",
   tab.children[0].textContent.indexOf("妙蛙种子") >= 0 && tab.children[0].textContent.indexOf("选哪一只上场") >= 0,
   tab.children[0].textContent);
@@ -169,31 +149,68 @@ check("tab 列出该种 4 张卡、带数值",
 check("tab 里亲密度直接写点数（亲密度:0，不带 Lv.）",
   tab.children[1].textContent.indexOf("亲密度:0") >= 0 && tab.children[1].textContent.indexOf("亲密度 Lv.") < 0,
   tab.children[1].textContent);
-check("tab 里已选的三张打勾", [1, 2, 3].every(function (i) { return tab.children[i + 1].classList.contains("selected"); }));
-click(tab.children[1]); // 点 Lv.96（没选上的那张）：加进来
-check("tab 里点没选上的：加进来", picks().length === 4 && pickedIds() === "1:1,1:2,1:3,1:0", pickedIds());
-check("点完 tab 收起来", tab.style.display === "none");
-mouseenter(cellOf(1));
-click(tab.children[2]); // 点 Lv.82（已选上的那张）：取消
-check("tab 里点已选上的：取消", picks().length === 3 && pickedIds() === "1:2,1:3,1:0", pickedIds());
 
-// 清掉 #001 的三只（每次都点 1 号球——取消后后面的球会往前补位）
-for (var k = 0; k < 3; k++) click(ballAt(0));
-check("点球清掉三只", picks().length === 0);
-[1, 4, 7, 10, 13, 16].forEach(function (id) { click(cellOf(id)); });
-check("选满 6 只", picks().length === 6, "实际 " + picks().length);
+// tab 里连续选：点 Lv.96 → 1 号球开、tab 不关；再点 Lv.82 → 2 号球开、tab 还是不关
+click(tabOpt(0));
+check("tab 里点 Lv.96：1 号球打开、里面是 #001",
+  nPicked() === 1 && ballAt(0).classList.contains("open") && ballImg(ballAt(0)).src.indexOf("/1.png") >= 0);
+check("球下写着 Lv.96", ballLv(ballAt(0)).textContent === "Lv.96", ballLv(ballAt(0)).textContent);
+check("点了选项 tab 不关、可以继续选", tab.style.display === "block");
+check("选了的格子右上角×几打勾变红", countOf(1).textContent === "✓ ×4" && countOf(1).classList.contains("selected"), countOf(1).textContent);
+check("已选 1 / 6，两个出征按钮都可用",
+  els["team-pick-count"].textContent === "已选 1 / 6" &&
+  els["encounter-start-btn"].disabled === false && els["encounter-deploy-btn"].disabled === false);
+click(tabOpt(1));
+check("tab 里再点 Lv.82：2 号球打开，tab 还是不关",
+  nPicked() === 2 && ballAt(1).classList.contains("open") && tab.style.display === "block", pickedIds());
+click(tabOpt(0));
+check("tab 里点已选的 Lv.96：取消、1 号球关回去，别的球不动",
+  nPicked() === 1 && !ballAt(0).classList.contains("open") && ballAt(1).classList.contains("open"),
+  pickedIds());
+check("tab 里已选的那张打勾", tabOpt(1).classList.contains("selected") && !tabOpt(0).classList.contains("selected"));
+
+// 新卡放第一个空球：1 号球空着，点 Lv.28 应该进 1 号球（不是最后）
+click(tabOpt(2));
+check("新卡放第一个空球（Lv.28 进 1 号球）",
+  nPicked() === 2 && ballLv(ballAt(0)).textContent === "Lv.28" && ballLv(ballAt(1)).textContent === "Lv.82",
+  pickedIds());
+click(tabOpt(3));
+check("再点 Lv.8：进 3 号球", nPicked() === 3 && ballLv(ballAt(2)).textContent === "Lv.8", pickedIds());
+click(tabOpt(0));
+check("再点 Lv.96：进 4 号球", nPicked() === 4 && ballLv(ballAt(3)).textContent === "Lv.96", pickedIds());
+
+// 点中间的球（2 号球 Lv.82）取消：只空出这一个球，别的球不动、不挪位
+click(ballAt(1));
+check("点中间的球取消：只空出 2 号球，别的球不动",
+  nPicked() === 3 && !ballAt(1).classList.contains("open") &&
+  ballLv(ballAt(0)).textContent === "Lv.28" && ballLv(ballAt(2)).textContent === "Lv.8" &&
+  ballLv(ballAt(3)).textContent === "Lv.96", pickedIds());
+click(tabOpt(1));
+check("再点 Lv.82：又回到 2 号球（第一个空球）",
+  nPicked() === 4 && ballLv(ballAt(1)).textContent === "Lv.82", pickedIds());
+
+// 鼠标离开 tab 就收起来
+tab.dispatch("mouseleave");
+check("鼠标离开 tab 就收起来", tab.style.display === "none");
+
+// 清掉 4 只（球是固定槽：挨个点 1–4 号球）
+[0, 1, 2, 3].forEach(function (i) { click(ballAt(i)); });
+check("点球清掉四只", nPicked() === 0);
+
+// 选满 6 只：第 7 只被拦
+[[1, 0], [4, 0], [7, 0], [10, 0], [13, 0], [16, 0]].forEach(function (a) { pickViaTab(a[0], a[1]); });
+check("选满 6 只", nPicked() === 6, "实际 " + nPicked());
 check("6 个球都打开", ballsBox.children.every(function (b) { return b.classList.contains("open"); }));
 check("已选 6 / 6", els["team-pick-count"].textContent === "已选 6 / 6");
-click(cellOf(1));
-check("满员时再点同种的第二只也被拦",
-  picks().length === 6 && els["toast"].textContent.indexOf("最多选 6 张卡") >= 0, els["toast"].textContent);
-click(cellOf(25));
-check("第 7 种被拦、弹提示", picks().length === 6 && els["toast"].textContent.indexOf("最多选 6 张卡") >= 0, els["toast"].textContent);
+mouseenter(cellOf(1));
+click(tabOpt(1));
+check("满员时再点没选上的：弹提示、不再加",
+  nPicked() === 6 && els["toast"].textContent.indexOf("最多选 6 张卡") >= 0, els["toast"].textContent);
 
 // 精灵球下面的出征按钮：点它开始遭遇战、队伍清空、切到进行中面板
 click(els["encounter-deploy-btn"]);
 check("点出征开始遭遇战", !!sandbox.PokeMem.ctx.encounter);
-check("出征后队伍清空", picks().length === 0);
+check("出征后队伍清空", nPicked() === 0);
 check("出征后切到进行中面板",
   els["encounter-picker"].style.display === "none" && els["encounter-status"].style.display === "");
 
