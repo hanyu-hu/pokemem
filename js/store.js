@@ -36,4 +36,22 @@
   PokeMem.save = function () {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(PokeMem.ctx.state)); } catch (e) {}
   };
+
+  // 出错时在页面顶部显示红条，别再静默没反应。
+  // 注册得早：store.js 是第一个加载的 UI 模块，之后任何模块加载失败都能显示
+  // （旧 app.js 里它也排在所有接线之前）。此时 lang.js 可能还没加载，
+  // PokeMem.t 未必存在，先用原文兜底。
+  window.addEventListener("error", function (e) {
+    var bar = document.getElementById("error-bar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "error-bar";
+      bar.style.cssText = "background:#c00;color:#fff;padding:10px 14px;font-size:13px;position:sticky;top:0;z-index:99";
+      document.body.prepend(bar);
+    }
+    var msg = (e && e.message) || "unknown error";
+    bar.textContent = PokeMem.t
+      ? PokeMem.t("errorPrefix", { msg: msg })
+      : "Error: " + msg;
+  });
 })();
