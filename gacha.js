@@ -22,6 +22,7 @@
   var TRAINER_MAX_LEVEL = 100; // 训练师与单张宝可梦卡的等级上限都是 100
   var TRAINER_EXP_PER_LEVEL = 100; // 每升 1 级要 100 经验
   var TRAINER_WELCOME_CRYSTALS = 100; // 注册时一次性给 100 梦想结晶（= 10 包），只给一次
+  var CRYSTALS_PER_PACK = 10; // 10 梦想结晶换 1 包（Task 7）
   var ITEM_IDS = ["poke_ball", "great_ball", "ultra_ball",
     "fire_stone", "water_stone", "thunder_stone", "leaf_stone", "moon_stone"];
 
@@ -250,6 +251,21 @@
     return TRAINER_WELCOME_CRYSTALS;
   }
 
+  // 结晶兑换卡包（Task 7）：10 颗结晶换 1 包，计时器不受影响。
+  // 先结算计时器应发的包，再检查结晶余额——兑换和计时到账发生在同一次
+  // 同步调用里，顺序固定，两个包都加上（2026-11-16 定下的并发规则）。
+  // 余额不足返回 0，不扣结晶；成功扣 10 颗、包数 +1，返回 1。
+  // 整个过程同步完成，校验和扣减之间没有异步空隙。
+  function exchangeCrystalsForPack(state, now) {
+    if (typeof now !== "number" || !isFinite(now)) now = Date.now();
+    var t = ensureTrainer(state);
+    grantDuePacks(state, now); // 先结算计时器，再兑换
+    if (t.crystals < CRYSTALS_PER_PACK) return 0;
+    t.crystals -= CRYSTALS_PER_PACK;
+    state.packs += 1;
+    return 1;
+  }
+
   // ---- 卡包计时（正式版）----
   function newState(now) {
     return { version: 2, packs: 1, lastGrantAt: now, collection: {}, totalDraws: 0,
@@ -279,8 +295,10 @@
 
   var api = { PACK_SIZE: PACK_SIZE, PACK_INTERVAL_MS: PACK_INTERVAL_MS, TIER_LABEL: TIER_LABEL,
     TRAINER_MAX_LEVEL: TRAINER_MAX_LEVEL, TRAINER_EXP_PER_LEVEL: TRAINER_EXP_PER_LEVEL,
-    TRAINER_WELCOME_CRYSTALS: TRAINER_WELCOME_CRYSTALS, ITEM_IDS: ITEM_IDS,
+    TRAINER_WELCOME_CRYSTALS: TRAINER_WELCOME_CRYSTALS, CRYSTALS_PER_PACK: CRYSTALS_PER_PACK,
+    ITEM_IDS: ITEM_IDS,
     newTrainer: newTrainer, ensureTrainer: ensureTrainer, grantWelcomeCrystals: grantWelcomeCrystals,
+    exchangeCrystalsForPack: exchangeCrystalsForPack,
     SR_PLUS: SR_PLUS, SSR_PLUS: SSR_PLUS, entry: entry, totalWeight: totalWeight,
     drawFromPool: drawFromPool, drawAny: drawAny, rollStats: rollStats, drawCard: drawCard,
     drawPack: drawPack, newState: newState, grantDuePacks: grantDuePacks,
