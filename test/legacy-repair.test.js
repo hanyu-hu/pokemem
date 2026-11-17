@@ -46,6 +46,7 @@ function run(file) { vm.runInContext(fs.readFileSync(__dirname + "/../" + file, 
 run("pokedex.js");
 run("avatars.js");
 run("i18n.js");
+run("card-progress.js");
 run("gacha.js");
 
 // v1.5 之前的存档：小火龙 8 张，只有汇总，没有 cards/legacy
