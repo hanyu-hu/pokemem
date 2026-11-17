@@ -111,6 +111,7 @@ button { font-family: inherit; }
 #detail-weakness { margin: 6px 0; }
 .type-chip { display: inline-flex; align-items: center; gap: 4px; background: #f7f7f7; border: 1px solid #eee; border-radius: 999px; padding: 1px 8px 1px 1px; font-size: 13px; vertical-align: middle; }
 .type-chip img { width: 20px; height: 20px; border-radius: 50%; }
+.detail-box .type-chip img { animation: none; filter: none; } /* 徽章不跟主图一起浮动 */
 .type-chip .mult { color: #e3350d; }
 
 /* 首页结晶行：余额 + 兑换按钮 */
