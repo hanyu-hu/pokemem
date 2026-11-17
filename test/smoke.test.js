@@ -362,6 +362,13 @@ check("A 攻击后战报有字、野生掉了血或进了战间选择",
   $A("battle-log").textContent.length > 0 &&
   (ctxA.encounter.wild ? ctxA.encounter.wild.hp < wildHpBefore : ctxA.encounter.phase === "prompt"),
   $A("battle-log").textContent);
+var switchedByForce = false;
+if (ctxA.encounter.needsPick) {
+  // 小概率：野生暴击把出战卡打倒了，强制菜单已打开，直接免费选下一只
+  $A("battle-switch-menu").children[2].click();
+  check("A 出战卡倒下后免费选下一只", ctxA.encounter.activeIndex === 1 && !ctxA.encounter.needsPick);
+  switchedByForce = true;
+}
 // 详情页：遭遇战中队员的卡显示实时当前 HP / 最大 HP
 var activeMember = ctxA.encounter.team[ctxA.encounter.activeIndex];
 byAttr(A.doc._bySelector["[data-tab]"], "data-tab", "dex").click();
@@ -376,11 +383,15 @@ if (ctxA.encounter.phase === "prompt") {
   $A("battle-continue-btn").click();
   check("A 战间选继续前进、回到战斗", ctxA.encounter.phase === "battle" && !!ctxA.encounter.wild);
 }
-$A("battle-switch-btn").click();
-check("A 点交换打开选队菜单", $A("battle-switch-menu").style.display !== "none" &&
-  $A("battle-switch-menu").children.length === 3, "实际 " + $A("battle-switch-menu").children.length);
-$A("battle-switch-menu").children[2].click();
-check("A 换上第二只", ctxA.encounter.activeIndex === 1, "实际 " + ctxA.encounter.activeIndex);
+if (!switchedByForce) {
+  $A("battle-switch-btn").click();
+  check("A 点交换打开选队菜单", $A("battle-switch-menu").style.display !== "none" &&
+    $A("battle-switch-menu").children.length === 3, "实际 " + $A("battle-switch-menu").children.length);
+  $A("battle-switch-menu").children[2].click();
+  check("A 换上第二只", ctxA.encounter.activeIndex === 1, "实际 " + ctxA.encounter.activeIndex);
+} else {
+  check("A 倒下后只剩一只可用、交换按钮禁用", $A("battle-switch-btn").disabled === true);
+}
 $A("battle-item-btn").click();
 check("A 点道具打开选球菜单", $A("battle-ball-menu").style.display !== "none" &&
   $A("battle-ball-menu").children.length === 4, "实际 " + $A("battle-ball-menu").children.length);

@@ -99,6 +99,9 @@
     for (var i = enc.log.length - 1; i >= 0; i--) {
       var e = enc.log[i];
       if (e.t === "hit") {
+        // 扔球失败后野生必定反击：最新一条是 hit 时，优先显示它前面那条失败的抓捕
+        var prev = i > 0 ? enc.log[i - 1] : null;
+        if (prev && prev.t === "catch" && !prev.success) { line = t("battleLogCatchFail", { name: logName(prev) }); break; }
         var atk = PokeMem.lang() === "en" ? (e.attackerEn || e.attacker) : e.attacker;
         var def = PokeMem.lang() === "en" ? (e.defenderEn || e.defender) : e.defender;
         line = t("battleLogHit", { attacker: atk, defender: def, damage: e.damage });

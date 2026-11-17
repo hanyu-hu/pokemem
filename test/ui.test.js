@@ -207,8 +207,9 @@ check("战间选择弹窗有继续/结束 + 进度",
 check("结算屏有击倒数、宝箱内容、返回按钮",
   html.includes('id="battle-settle"') && html.includes('id="battle-settle-kos"') &&
   html.includes('id="battle-settle-chest"') && html.includes('id="battle-settle-back-btn"'));
-check("战斗界面渲染野生/我方 HP 条与战报",
-  encUiJs.includes("renderBattle") && encUiJs.includes("setHpBar") && encUiJs.includes("renderLog"));
+check("战斗界面渲染野生/我方 HP 条与战报（抓捕失败优先于随后的反击行）",
+  encUiJs.includes("renderBattle") && encUiJs.includes("setHpBar") && encUiJs.includes("renderLog") &&
+  encUiJs.includes("battleLogCatchFail") && encUiJs.includes('prev.t === "catch"'));
 check("每次行动后保存存档（攻击/交换/选下一只/扔球/撤退/继续/结束都调 save）",
   ["doAttack", "doSwitch", "pickNext", "throwBall", "doRetreat", "doContinue", "doEnd"].every(function (fn) {
     var body = encUiJs.slice(encUiJs.indexOf("function " + fn));
