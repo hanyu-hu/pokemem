@@ -170,7 +170,6 @@ button { font-family: inherit; }
 .trainer-item.zero { opacity: .45; }
 /* 遭遇战页：场景卡、选队格子（Task 27） */
 .scene-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
-@media (min-width: 640px) { .scene-list { grid-template-columns: repeat(3, 1fr); } }
 .scene-card { background: #fff; border: 2px solid transparent; border-radius: 14px; padding: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.08); text-align: center; }
 .scene-card.selected { border-color: #e3350d; background: #fff0ec; }
 .scene-card.locked { opacity: .45; cursor: not-allowed; }
