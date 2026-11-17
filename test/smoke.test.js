@@ -9,8 +9,8 @@ const fs = require("fs");
 const path = require("path");
 const GachaNode = require("../gacha.js"); // 仅用于造旧存档夹具
 
-const FILES = ["pokedex.js", "i18n.js", "gacha.js", "js/store.js", "js/util.js",
-  "js/lang.js", "js/home.js", "js/dex.js", "js/rates.js", "js/tabs.js",
+const FILES = ["pokedex.js", "avatars.js", "i18n.js", "gacha.js", "js/store.js", "js/util.js",
+  "js/lang.js", "js/types.js", "js/home.js", "js/dex.js", "js/rates.js", "js/tabs.js",
   "js/debug.js", "js/register.js", "js/trainer.js", "js/boot.js"];
 
 let failures = 0;
@@ -143,6 +143,8 @@ function registerSelectors(doc) {
   doc._bySelector["[data-tier-filter]"] = ["ALL", "MR", "UR", "SSR", "SR", "R", "N"].map(function (t) { return btn({ "data-tier-filter": t }); });
   doc._bySelector["[data-owned-filter]"] = ["ALL", "OWNED", "MISSING"].map(function (t) { return btn({ "data-owned-filter": t }); });
   doc._bySelector["[data-add-packs]"] = ["1", "10", "100"].map(function (n) { return btn({ "data-add-packs": n }); });
+  doc._bySelector["[data-add-crystals]"] = ["10", "100", "1000"].map(function (n) { return btn({ "data-add-crystals": n }); });
+  doc._bySelector["[data-add-candy]"] = ["10", "50", "100"].map(function (n) { return btn({ "data-add-candy": n }); });
   doc._bySelector["[data-i18n]"] = ["tabHome", "tabDex", "tabRates", "subtitle",
     "registerTitle", "registerDesc", "registerHint", "registerSubmit", "registerStart",
     "tabTrainer", "trainerCrystals", "trainerCandy", "trainerItems", "trainerRenameBtn"].map(function (k) {
@@ -250,10 +252,10 @@ check("A 快捷 +10 包", ctxA.state.packs === 16, "实际 " + ctxA.state.packs)
 ctxA.state.trainer.exp = 90; // 这一包必定升级（90 + 至少 20 经验），验升级提示
 $A("open-pack-btn").click();
 check("A 开包 10 张", ctxA.currentPack && ctxA.currentPack.length === 10);
-check("A 开包扣 1 包", ctxA.state.packs === 15, "实际 " + ctxA.state.packs);
+check("A 开包预览不扣包（翻过才入册）", ctxA.state.packs === 16, "实际 " + ctxA.state.packs);
 check("A 开包浮层显示", $A("pack-overlay").classList.contains("show"));
 check("A 开包结果有训练师经验行", $A("pack-trainer").textContent.indexOf("经验") >= 0, $A("pack-trainer").textContent);
-check("A 开包升级弹出提示", $A("toast").classList.contains("show") && $A("toast").textContent.indexOf("Lv.") >= 0, $A("toast").textContent);
+check("A 开包预览不弹升级提示（还没入册）", !$A("toast").classList.contains("show"));
 check("A 包里 10 张卡已渲染", $A("pack-cards").children.length === 10);
 $A("pack-cards").children[0].click();
 check("A 点一张翻开", $A("pack-cards").children[0].classList.contains("flipped"));
@@ -262,12 +264,23 @@ check("A 全部翻开有总结", $A("pack-summary").textContent.length > 0, $A("
 check("A 全部翻开每张都翻面",
   $A("pack-cards").children.every(function (el) { return el.classList.contains("flipped"); }));
 $A("close-pack-btn").click();
+check("A 翻过再入册扣 1 包", ctxA.state.packs === 15, "实际 " + ctxA.state.packs);
+check("A 入册后升级弹出提示", $A("toast").classList.contains("show") && $A("toast").textContent.indexOf("Lv.") >= 0, $A("toast").textContent);
 check("A 关闭浮层", !$A("pack-overlay").classList.contains("show"));
 check("A 卡册 151 格", $A("collection-grid").children.length === 151, "实际 " + $A("collection-grid").children.length);
 
 $A("collection-grid").children[0].click();
 check("A 点格子开详情", $A("detail-modal").classList.contains("show"));
 check("A 详情是 #001", $A("detail-name").textContent.indexOf("#001") === 0, $A("detail-name").textContent);
+check("A 详情属性是图标（草、毒）",
+  $A("detail-meta").innerHTML.indexOf("grass.svg") >= 0 && $A("detail-meta").innerHTML.indexOf("poison.svg") >= 0,
+  $A("detail-meta").innerHTML);
+check("A 详情弱点是图标（虫×4、火、冰、飞行、超能力）",
+  $A("detail-weakness").innerHTML.indexOf("弱点") >= 0 &&
+  $A("detail-weakness").innerHTML.indexOf("bug.svg") >= 0 &&
+  $A("detail-weakness").innerHTML.indexOf("×4") >= 0 &&
+  $A("detail-weakness").innerHTML.indexOf("psychic.svg") >= 0,
+  $A("detail-weakness").innerHTML);
 $A("detail-close").click();
 check("A 关闭详情", !$A("detail-modal").classList.contains("show"));
 
@@ -299,6 +312,17 @@ $A("exchange-btn").click();
 check("A 结晶不够时点兑换也没变化", ctxA.state.packs === 17 && ctxA.state.trainer.crystals === 5);
 ctxA.state.trainer.crystals = 90;
 A.PokeMem.renderHeader();
+
+var crystalsBefore = ctxA.state.trainer.crystals;
+byAttr(A.doc._bySelector["[data-add-crystals]"], "data-add-crystals", "100").click();
+check("A Debug +100 结晶", ctxA.state.trainer.crystals === crystalsBefore + 100
+  && $A("crystal-count").textContent === String(crystalsBefore + 100),
+  "结晶 " + ctxA.state.trainer.crystals);
+var candyBefore = ctxA.state.trainer.candy;
+byAttr(A.doc._bySelector["[data-add-candy]"], "data-add-candy", "50").click();
+check("A Debug +50 糖果", ctxA.state.trainer.candy === candyBefore + 50
+  && $A("trainer-candy").textContent === String(candyBefore + 50),
+  "糖果 " + ctxA.state.trainer.candy);
 
 $A("reset-save-btn").click();
 check("A 清空后回到 1 包", ctxA.state.packs === 1, "实际 " + ctxA.state.packs);
@@ -422,6 +446,9 @@ $E("open-pack-btn").click();
 check("E 丢卡糖果不含升级糖果",
   $E("pack-trainer").textContent === "训练师 +51 经验　·　升 1 级（+2 糖果）　·　超上限丢卡 +8 糖果",
   $E("pack-trainer").textContent);
+check("E 开包预览不发糖果（翻过才入册）", E.PokeMem.ctx.state.trainer.candy === 0, "实际 " + E.PokeMem.ctx.state.trainer.candy);
+$E("pack-cards").children[0].click(); // 翻一张再入册
+$E("close-pack-btn").click();
 check("E 糖果总数是 8 + 2 = 10", E.PokeMem.ctx.state.trainer.candy === 10, "实际 " + E.PokeMem.ctx.state.trainer.candy);
 check("E 升级弹出提示", $E("toast").classList.contains("show") && $E("toast").textContent.indexOf("Lv.2") >= 0, $E("toast").textContent);
 
@@ -455,6 +482,31 @@ $F("exchange-btn").click();
 check("F 兑换后结晶归零、包 +1、按钮禁用",
   ctxF.state.trainer.crystals === 0 && ctxF.state.packs === 4 && $F("exchange-btn").disabled === true,
   "结晶 " + ctxF.state.trainer.crystals + "，包 " + ctxF.state.packs);
+
+// ---------- 场景 G：Task 20——头像默认、打开选择器、点选换头像并保存 ----------
+const G = runApp({});
+const ctxG = G.PokeMem.ctx;
+const $G = function (id) { return G.doc.getElementById(id); };
+$G("register-name-input").value = "小智";
+$G("register-submit-btn").click();
+$G("register-start-btn").click();
+check("G 注册后默认头像是赤红", ctxG.state.trainer.avatar === "red" && $G("trainer-avatar").src.indexOf("data:image/webp;base64,") === 0);
+var redSrc = $G("trainer-avatar").src;
+$G("trainer-avatar-btn").click();
+check("G 点换头像打开选择器", $G("avatar-overlay").classList.contains("show"));
+var gridBtns = $G("avatar-grid").children;
+check("G 选择器里 25 个头像", gridBtns.length === 25, "实际 " + gridBtns.length);
+var moonBtn = gridBtns.filter(function (b) { return b.getAttribute("data-avatar") === "moon"; })[0];
+moonBtn.click();
+check("G 点满月头像立即换上", ctxG.state.trainer.avatar === "moon" && $G("trainer-avatar").src !== redSrc && $G("trainer-avatar").src === G.sandbox.AVATARS.filter(function (a) { return a.id === "moon"; })[0].img);
+check("G 换头像已保存", JSON.parse(G.sandbox.localStorage.getItem("pokemem-save-v1")).trainer.avatar === "moon");
+var moonBtn2 = $G("avatar-grid").children.filter(function (b) { return b.getAttribute("data-avatar") === "moon"; })[0];
+check("G 选中项有高亮", moonBtn2.classList.contains("selected"));
+$G("avatar-close").click();
+check("G 点关闭收起选择器", !$G("avatar-overlay").classList.contains("show"));
+ctxG.state.trainer.avatar = "pikachu"; // 非法值
+G.PokeMem.renderTrainer();
+check("G 非法头像渲染时回默认赤红", ctxG.state.trainer.avatar === "red" && $G("trainer-avatar").src === G.sandbox.AVATARS[0].img);
 
 console.log(failures === 0 ? "ALL PASS" : failures + " FAILURES");
 process.exit(failures === 0 ? 0 : 1);

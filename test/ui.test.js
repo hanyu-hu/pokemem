@@ -72,6 +72,15 @@ check("卡背是真实高清贴图（base64 嵌在 CSS 里）", css.includes('ur
 check("卡背盒子比例跟图一致（734:1023），背景精确贴合", css.includes("aspect-ratio: 734 / 1023") && css.includes("/ 100% 100% no-repeat"));
 check("卡背不再是问号/CSS 手绘", !app.includes('<div class="card-back">?</div>') && !css.includes(".card-back-ball"));
 const homeJs = fs.readFileSync(__dirname + "/../js/home.js", "utf8");
+const trainerJs = fs.readFileSync(__dirname + "/../js/trainer.js", "utf8");
+check("道具图和宝可梦图共用一个图源常量（pokedex.js 的 SPRITE_BASE）",
+  trainerJs.includes('SPRITE_BASE + "items/"') && trainerJs.includes('replace(/_/g, "-")'));
+const pokedexJs = fs.readFileSync(__dirname + "/../pokedex.js", "utf8");
+check("图源常量是 PokeAPI sprites 域名",
+  pokedexJs.includes('SPRITE_BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/"'));
+check("道具行渲染图标（加载失败时隐藏）",
+  trainerJs.includes("<img src=\"' + itemImg(id) + '\"") && trainerJs.includes("onerror=\"this.style.display=\\'none\\'\""));
+check("CSS 有道具图标尺寸和名称占位", css.includes(".trainer-item img") && css.includes("width: 28px") && css.includes(".trainer-item-name"));
 check("开包页也不再渲染问号占位", !homeJs.includes('<div class="card-back">?</div>') && homeJs.includes('<div class="card-front"></div>'));
 check("卡背没有定高裁切和白色内描边", !css.includes("min-height: 232px") && !css.includes("inset 0 0 0 3px"));
 check("CSS 有经验条轨道（高度+底色）", css.includes(".exp-bar") && css.includes("height: 10px"));
@@ -88,6 +97,51 @@ check("开包用预览（drawPackPreview），不直接结算", homeJsText.inclu
 check("有关闭不算开过的翻牌计数", homeJsText.includes("packFlipped"));
 check("翻牌后按钮变入册", homeJsText.includes("updateCloseBtn") && homeJsText.includes('t("collectBtn")') && homeJsText.includes('t("closeBtn")'));
 check("没翻牌关闭不调提交", homeJsText.includes("ctx.packFlipped > 0") && homeJsText.includes("settlePack"));
+
+// Task 20 头像
+const { AVATARS } = require("../avatars.js");
+const gachaJs = fs.readFileSync(__dirname + "/../gacha.js", "utf8");
+check("头像 25 个", AVATARS.length === 25, "实际 " + AVATARS.length);
+check("头像图以内嵌 WebP data URI 存在（connector 只收文本，二进制推不上去）",
+  AVATARS.every(function (a) { return a.img.indexOf("data:image/webp;base64,") === 0; }));
+check("头像校验列表在 gacha.js 里（AVATAR_IDS）",
+  gachaJs.includes("AVATAR_IDS") && gachaJs.includes('DEFAULT_AVATAR_ID = "red"'));
+check("页面加载头像数据", html.includes('<script src="avatars.js"></script>'));
+check("训练师卡有头像和换头像按钮",
+  html.includes('id="trainer-avatar"') && html.includes('id="trainer-avatar-btn"') && html.includes('id="avatar-overlay"') && html.includes('id="avatar-grid"'));
+check("CSS 有头像圆形裁切与选择器网格",
+  css.includes(".trainer-avatar") && css.includes("border-radius: 50%") && css.includes(".avatar-grid") && css.includes(".avatar-option.selected"));
+check("头像用 createElement 造按钮（测试桩可点）",
+  trainerJs.includes('document.createElement("button")') && trainerJs.includes('classList.add("avatar-option")'));
+check("非法头像回默认赤红（ensureTrainer 修 + avatarById 兜底，不靠不存在的文件）",
+  trainerJs.includes("return AVATARS[0]") && !html.includes("assets/avatars/"));
+
+// Task 21：Debug 面板加结晶 / 加糖果
+const debugJs = fs.readFileSync(__dirname + "/../js/debug.js", "utf8");
+check("Debug 面板有加结晶按钮（+10/+100/+1000）",
+  html.includes('data-add-crystals="10"') && html.includes('data-add-crystals="100"') && html.includes('data-add-crystals="1000"'));
+check("Debug 面板有加糖果按钮（+10/+50/+100）",
+  html.includes('data-add-candy="10"') && html.includes('data-add-candy="50"') && html.includes('data-add-candy="100"'));
+check("Debug 加结晶改训练师结晶并刷新顶栏",
+  debugJs.includes("[data-add-crystals]") && debugJs.includes(".crystals +=") && debugJs.includes("renderHeader"));
+check("Debug 加糖果改训练师糖果并刷新训练师页",
+  debugJs.includes("[data-add-candy]") && debugJs.includes(".candy +=") && debugJs.includes("renderTrainer"));
+
+// Task 22：每只宝可梦的属性图标 + 弱点（一代克制表，图标网上找）
+const typesJs = fs.readFileSync(__dirname + "/../js/types.js", "utf8");
+const dexJs = fs.readFileSync(__dirname + "/../js/dex.js", "utf8");
+check("属性表是一代 15 属性（无钢/恶/妖精）",
+  typesJs.includes("TYPE_ORDER") && !typesJs.includes('"steel"') && !typesJs.includes('"dark"') && !typesJs.includes('"fairy"'));
+check("克制表有一代约定（幽灵克超能力、毒虫互克）",
+  typesJs.includes("psychic: 2, ghost: 2") &&
+  typesJs.includes("bug: 2") && typesJs.includes("poison: 2"));
+check("属性图标走网上图源（partywhale SVG）",
+  typesJs.includes("partywhale/pokemon-type-icons") && typesJs.includes("typeIconUrl"));
+check("详情页有弱点行", html.includes('id="detail-weakness"'));
+check("详情用属性图标 + 弱点图标",
+  dexJs.includes("typeChipHtml") && dexJs.includes("weaknessesFor") && dexJs.includes("detail-weakness"));
+check("属性徽章有样式", css.includes(".type-chip") && css.includes(".type-chip img"));
+check("旧的纯文字 typeLabel 已删", !fs.readFileSync(__dirname + "/../js/lang.js", "utf8").includes("typeLabel") && !dexJs.includes("typeLabel"));
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
