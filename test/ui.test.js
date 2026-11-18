@@ -185,7 +185,7 @@ check("场景是轨道：9 个小圆圈绕中心转，中心显示悬停或选�
   encUiJs.includes("orbitPaused") && encUiJs.includes("showOrbitCenter") &&
   css.includes(".orbit-wrap") && css.includes(".orbit-ring") &&
   css.includes("@keyframes orbit-spin") && css.includes(".orbit-wrap.paused .orbit-ring") &&
-  css.includes(".orbit-center") && css.includes(".orbit-cell.selected"));
+  css.includes(".orbit-center") && css.includes(".orbit-types .type-chip") && css.includes(".orbit-cell.selected"));
 check("地形图文件在场景逻辑之后、遭遇战 UI 之前加载",
   html.indexOf("js/scenes.js") < html.indexOf("js/scene-icons.js") &&
   html.indexOf("js/scene-icons.js") < html.indexOf("js/encounter-ui.js"));
