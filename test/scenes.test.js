@@ -22,9 +22,9 @@ check("基础等级 5/8/12/16/22/30/38/48/60（草丛是 5，不是 3：全表 m
   Scenes.SCENES.map(s => s.baseLevel).join(",") === "5,8,12,16,22,30,38,48,60");
 check("15 个属性全覆盖",
   new Set(Scenes.SCENES.flatMap(s => s.types)).size === 15);
-check("每个场景都有卡通地形图（SCENE_ICONS 全覆盖，都是 data: 内嵌图）",
+check("每个场景都有卡通地形图（SCENE_ICONS 全覆盖，都是矢量 SVG 内嵌图）",
   Scenes.SCENES.every(function (s) {
-    return typeof SceneIcons[s.id] === "string" && SceneIcons[s.id].indexOf("data:image/") === 0;
+    return typeof SceneIcons[s.id] === "string" && SceneIcons[s.id].indexOf("data:image/svg+xml;base64,") === 0;
   }));
 check("每个场景有代表宝可梦（art，图鉴 1–151，不重复）",
   Scenes.SCENES.every(function (s) { return s.art >= 1 && s.art <= 151; }) &&

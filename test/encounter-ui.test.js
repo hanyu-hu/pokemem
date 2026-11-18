@@ -4,7 +4,8 @@
 // 球是 6 个固定槽（点哪只取消哪只、别的球不动，新卡放第一个空球）、
 // 出征按钮（精灵球下面一个、最下面一个）、满 6 只拦第 7 只。
 // 悬停意图：快速路过边上的格子不换 tab（停满 200ms 才换）、收 tab 给 300ms 宽限；
-// tab 选项一行写全信息（小字、短标签）；场景卡是图片卡（立绘 + 悬停浮层）。
+// tab 选项一行写全信息（小字、短标签）；场景是 9 个小圆圈绕中心转的轨道（全矢量 SVG 图，
+// 悬停/选中停转、离开/取消选中继续转，中心显示悬停或选中场景的信息）。
 // 桩用真定时器（setTimeout/clearTimeout），mouseenter/收 tab 的检查要 await 睡 260/360ms。
 const fs = require("fs");
 const vm = require("vm");
@@ -146,29 +147,54 @@ check("一开始已选 0 / 6", els["team-pick-count"].textContent === "已选 0 
 check("一开始两个出征按钮都禁用",
   els["encounter-start-btn"].disabled === true && els["encounter-deploy-btn"].disabled === true);
 
-// 场景卡是图片卡：渐变底 + 代表宝可梦立绘，名字/属性/等级在悬停浮层里
-const sceneCard = function (i) { return els["scene-list"].children[i]; };
-const sceneArt = function (i) { return sceneCard(i).children.filter(function (c) { return c.className === "scene-art"; })[0]; };
-const sceneInfo = function (i) { return sceneCard(i).children.filter(function (c) { return c.className === "scene-info"; })[0]; };
-check("场景卡有图片区（草丛是卡通地形图，小山丘 PNG 内嵌）",
-  !!sceneArt(0) && sceneArt(0).children.some(function (c) { return c.tagName === "IMG" && c.src.indexOf("data:image/png;base64,") === 0; }));
-check("大图里没有的城市、洞穴是同风格手绘 SVG（城市、洞穴卡也是内嵌图）",
-  sceneArt(3).children.some(function (c) { return c.tagName === "IMG" && c.src.indexOf("data:image/svg+xml;base64,") === 0; }) &&
-  sceneArt(5).children.some(function (c) { return c.tagName === "IMG" && c.src.indexOf("data:image/svg+xml;base64,") === 0; }));
-check("9 个场景卡都有地形图（没有哪张空着或回落到立绘）",
-  els["scene-list"].children.every(function (card) {
-    return card.children.some(function (c) { return c.className === "scene-art"; }) &&
-      card.children.filter(function (c) { return c.className === "scene-art"; })[0]
-        .children.some(function (c) { return c.tagName === "IMG" && c.src.indexOf("data:image/") === 0; });
+// 场景轨道：9 个小圆圈绕中心转（36s 一圈），中心显示悬停或选中场景的信息
+const orbitWrap = function () { return els["scene-list"].children[0]; };
+const orbitRing = function () { return orbitWrap().children[0]; };
+const orbitCenter = function () { return orbitWrap().children[1]; };
+const orbitCell = function (i) { return orbitRing().children[i]; };
+const orbitImg = function (i) { return orbitCell(i).children[0]; };
+const centerName = function () {
+  var ch = orbitCenter().children.filter(function (c) { return c.className === "orbit-name"; });
+  return ch.length ? ch[0].textContent : "";
+};
+const centerBase = function () {
+  var ch = orbitCenter().children.filter(function (c) { return c.className === "orbit-base"; });
+  return ch.length ? ch[0].textContent : "";
+};
+check("场景是轨道：1 个外框、环上 9 个圆圈、中间是信息区",
+  els["scene-list"].children.length === 1 && orbitRing().children.length === 9 &&
+  orbitWrap().className.indexOf("orbit-wrap") >= 0 && orbitCenter().className === "orbit-center");
+check("圆圈从正上方开始排（草丛在顶上、每 40° 一个）",
+  orbitCell(0).style.transform.indexOf("rotate(-90deg)") >= 0 &&
+  orbitCell(2).style.transform.indexOf("rotate(-10deg)") >= 0);
+check("9 个圆圈都是矢量 SVG 地形图（没有低分辨率 PNG）",
+  orbitRing().children.every(function (cell) {
+    return cell.children[0].tagName === "IMG" && cell.children[0].src.indexOf("data:image/svg+xml;base64,") === 0;
   }));
-check("场景卡悬停浮层里有名字、属性图标、野生起始等级",
-  !!sceneInfo(0) &&
-  sceneInfo(0).children.some(function (c) { return c.className === "scene-name" && c.textContent === "草丛"; }) &&
-  sceneInfo(0).children.some(function (c) { return c.className === "scene-types"; }) &&
-  sceneInfo(0).children.some(function (c) { return c.className === "scene-base"; }));
-check("未解锁场景卡左下角常显解锁小牌子（森林 Lv.5 解锁）",
-  sceneCard(1).children.some(function (c) { return c.className === "scene-lock-badge"; }) &&
-  sceneCard(1).children.filter(function (c) { return c.className === "scene-lock-badge"; })[0].textContent.indexOf("5") >= 0);
+check("中心默认显示已选的草丛（名字 + 打勾、属性图标、野生等级）",
+  centerName() === "草丛 ✓" &&
+  orbitCenter().children.some(function (c) { return c.className === "orbit-types"; }) &&
+  centerBase().indexOf("5") >= 0);
+orbitCell(1).dispatch("mouseenter");
+check("悬停森林圆圈，中心换成森林（未解锁显示解锁条件）",
+  centerName() === "森林" && centerBase().indexOf("5") >= 0);
+orbitCell(1).dispatch("mouseleave");
+check("鼠标离开圆圈，中心回到已选的草丛", centerName() === "草丛 ✓");
+check("未解锁的森林圆圈带锁、点不动",
+  orbitCell(1).classList.contains("locked") &&
+  orbitCell(1).children.some(function (c) { return c.className === "orbit-lock"; }));
+orbitCell(1).click();
+check("点未解锁场景不切换", orbitCell(0).classList.contains("selected") && !orbitCell(1).classList.contains("selected"));
+check("一开始没选、鼠标不在轨道上，转圈在转",
+  !orbitWrap().classList.contains("paused"));
+orbitCell(0).click(); // 点草丛：选中
+check("选中草丛，转圈停住", orbitWrap().classList.contains("paused"));
+orbitCell(0).click(); // 再点一次：取消选择
+check("再点一次取消选择，转圈继续转", !orbitWrap().classList.contains("paused"));
+orbitWrap().dispatch("mouseenter");
+check("鼠标放上轨道（没选），转圈也停住", orbitWrap().classList.contains("paused"));
+orbitWrap().dispatch("mouseleave");
+check("鼠标离开轨道（没选），转圈继续转", !orbitWrap().classList.contains("paused"));
 
 // 点 #001 格子：只打开 tab，不直接选
 click(cellOf(1));

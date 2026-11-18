@@ -171,26 +171,28 @@ check("遭遇战 UI 文件在 encounter 逻辑之后加载",
 check("切到遭遇战页签时渲染",
   fs.readFileSync(__dirname + "/../js/tabs.js", "utf8").includes('tab === "encounter"') &&
   fs.readFileSync(__dirname + "/../js/tabs.js", "utf8").includes("renderEncounter"));
-check("场景卡用 createElement 造按钮（测试桩能点）、未解锁灰掉点不动",
-  encUiJs.includes('document.createElement("button")') && encUiJs.includes('"scene-card"') &&
+check("场景圆圈用 createElement 造按钮（测试桩能点）、未解锁灰掉点不动",
+  encUiJs.includes('document.createElement("button")') && encUiJs.includes('"orbit-cell"') &&
   encUiJs.includes('"locked"') && encUiJs.includes("if (locked) return;"));
 check("场景卡有名字、属性图标、野生起始等级、解锁条件",
   encUiJs.includes("sceneName") && encUiJs.includes("typeIconHtml") &&
   encUiJs.includes("encounterBaseLevel") && encUiJs.includes("encounterUnlock"));
-check("场景卡是图片卡：卡通地形图 + 场景渐变底色，悬停浮层显示名字和属性",
-  encUiJs.includes('"scene-art"') && encUiJs.includes('"scene-info"') && encUiJs.includes("SCENE_ICONS") &&
-  encUiJs.includes('"scene-img"') && encUiJs.includes('"scene-lock-badge"') &&
-  encUiJs.includes("imgUrl(sc.art)") && // 图标缺失时回落到代表宝可梦立绘
-  css.includes(".scene-art") && css.includes(".scene-info") &&
-  css.includes(".scene-card:hover .scene-info") && css.includes("@media (hover: none)"));
+check("场景是轨道：9 个小圆圈绕中心转，中心显示悬停或选中场景的信息",
+  encUiJs.includes('"orbit-wrap"') && encUiJs.includes('"orbit-ring"') &&
+  encUiJs.includes('"orbit-cell"') && encUiJs.includes('"orbit-center"') &&
+  encUiJs.includes("SCENE_ICONS") && encUiJs.includes("imgUrl(sc.art)") && // 图标缺失时回落到代表宝可梦立绘
+  encUiJs.includes("orbitPaused") && encUiJs.includes("showOrbitCenter") &&
+  css.includes(".orbit-wrap") && css.includes(".orbit-ring") &&
+  css.includes("@keyframes orbit-spin") && css.includes(".orbit-wrap.paused .orbit-ring") &&
+  css.includes(".orbit-center") && css.includes(".orbit-cell.selected"));
 check("地形图文件在场景逻辑之后、遭遇战 UI 之前加载",
   html.indexOf("js/scenes.js") < html.indexOf("js/scene-icons.js") &&
   html.indexOf("js/scene-icons.js") < html.indexOf("js/encounter-ui.js"));
-check("会动的图：场景地形图轻浮、悬停摇摆、选中脉冲、云朵飘、球里宝可梦轻浮",
-  css.includes("@keyframes scene-bob") && css.includes("@keyframes scene-wiggle") &&
+check("会动的图：场景轨道转圈、地形图轻浮、悬停摇摆、选中脉冲、云朵飘、球里宝可梦轻浮",
+  css.includes("@keyframes orbit-spin") && css.includes("@keyframes scene-bob") && css.includes("@keyframes scene-wiggle") &&
   css.includes("@keyframes scene-pulse") && css.includes("@keyframes ball-bob") &&
-  css.includes("@keyframes cloud-drift") && css.includes(".scene-card:hover .scene-art img") &&
-  css.includes(".scene-card.selected") && css.includes(".encounter-clouds") &&
+  css.includes("@keyframes cloud-drift") && css.includes(".orbit-cell:hover .orbit-img") &&
+  css.includes(".orbit-cell.selected") && css.includes(".encounter-clouds") &&
   html.includes('class="encounter-clouds"') && css.includes("prefers-reduced-motion"));
 check("选卡 tab 选项一行写全信息（小字 11px、不换行、短标签“攻”）",
   encUiJs.includes("atkShort") && css.includes(".team-pick-opt") &&
@@ -211,8 +213,8 @@ check("开始按钮没选队时禁用、开始后记进 ctx.encounter",
   encUiJs.includes("pickCount() < 1") && encUiJs.includes("ctx.encounter = res.encounter"));
 check("开始后记进 ctx.encounter、进行中显示战斗屏",
   encUiJs.includes("ctx.encounter = res.encounter") && encUiJs.includes("renderBattle"));
-check("场景卡与选队格子有样式（选中红框、未解锁变暗）",
-  css.includes(".scene-card") && css.includes(".scene-card.selected") && css.includes(".scene-card.locked") &&
+check("场景轨道圆圈与选队格子有样式（选中红框、未解锁变暗）",
+  css.includes(".orbit-cell") && css.includes(".orbit-cell.selected") && css.includes(".orbit-cell.locked") &&
   css.includes(".team-cell.selected"));
 
 // 选队改版：同种只放一只、悬停选哪一只上场、6 个精灵球

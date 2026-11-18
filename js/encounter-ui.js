@@ -271,65 +271,115 @@
     ctx.encounter = null;
     renderEncounter();
   }
-  // 场景卡：图片卡——场景渐变底色 + 卡通地形图（SCENE_ICONS）；名字、会出现哪些属性、野生起始等级
-  // 平时不显示，鼠标悬停浮层才出来（手机上没有悬停，浮层常显）；未解锁的灰掉、点不动，
-  // 左下角常显一个“Lv.X 解锁”小牌子，免得看不出为什么点不动
+  // 场景轨道：9 个小圆圈绕着中心转（36s 一圈，图标始终正着）；中心显示悬停或选中场景的信息
+  // （名字、属性、野生起始等级、解锁条件），没悬停也没选中时显示提示。
+  // 转圈的停/转：鼠标放上轨道就停（好点中）；选中了也停（再点一次已选的取消选择）；
+  // 没选、鼠标也离开了就继续转。点选只就地改 .selected，不重建轨道（重建会把转圈角度归零）。
+  var orbitHover = false; // 鼠标在不在轨道上
+  var orbitWrapEl = null; // 轨道外框（转圈暂停靠它加 .paused）
+  var orbitCenterEl = null; // 中心信息区
+  var orbitCells = []; // 9 个圆圈（按场景顺序）
+  function orbitPaused() { return orbitHover || !!ctx.encounterScene; }
+  function updateOrbitPause() {
+    if (!orbitWrapEl) return;
+    if (orbitPaused()) orbitWrapEl.classList.add("paused");
+    else orbitWrapEl.classList.remove("paused");
+  }
+  // 中心显示哪个场景的信息：悬停的优先，其次已选的（默认草丛），都没有就显示提示
+  function showOrbitCenter(sc) {
+    if (!orbitCenterEl) return;
+    orbitCenterEl.innerHTML = "";
+    if (!sc) {
+      var hint = document.createElement("div");
+      hint.className = "orbit-hint";
+      hint.textContent = t("encounterOrbitHint");
+      orbitCenterEl.appendChild(hint);
+      return;
+    }
+    var locked = Gacha.ensureTrainer(ctx.state).level < sc.unlockLevel;
+    var name = document.createElement("div");
+    name.className = "orbit-name";
+    name.textContent = PokeMem.Scenes.sceneName(sc.id, PokeMem.lang()) +
+      (sc.id === selectedScene() ? " ✓" : "");
+    orbitCenterEl.appendChild(name);
+    var types = document.createElement("div");
+    types.className = "orbit-types";
+    types.innerHTML = sc.types.map(function (id) { return PokeMem.Types.typeIconHtml(id); }).join("");
+    orbitCenterEl.appendChild(types);
+    var base = document.createElement("div");
+    base.className = "orbit-base";
+    base.textContent = locked
+      ? t("encounterUnlock", { level: sc.unlockLevel })
+      : t("encounterBaseLevel", { level: sc.baseLevel });
+    orbitCenterEl.appendChild(base);
+  }
   function renderScenes() {
     var tr = Gacha.ensureTrainer(ctx.state);
     var list = $("scene-list");
     list.innerHTML = "";
-    PokeMem.Scenes.SCENES.forEach(function (sc) {
+    orbitCells = [];
+    var wrap = document.createElement("div");
+    wrap.className = "orbit-wrap";
+    wrap.id = "orbit-wrap";
+    orbitWrapEl = wrap;
+    var ring = document.createElement("div");
+    ring.className = "orbit-ring";
+    wrap.appendChild(ring);
+    var center = document.createElement("div");
+    center.className = "orbit-center";
+    orbitCenterEl = center;
+    wrap.appendChild(center);
+    list.appendChild(wrap);
+    PokeMem.Scenes.SCENES.forEach(function (sc, i) {
       var locked = tr.level < sc.unlockLevel;
-      var b = document.createElement("button");
-      b.classList.add("scene-card");
-      if (locked) b.classList.add("locked");
-      if (sc.id === selectedScene()) b.classList.add("selected");
-      b.setAttribute("data-scene", sc.id);
-      var art = document.createElement("div");
-      art.className = "scene-art";
+      var cell = document.createElement("button");
+      cell.classList.add("orbit-cell");
+      if (locked) cell.classList.add("locked");
+      if (sc.id === selectedScene()) cell.classList.add("selected");
+      cell.setAttribute("data-scene", sc.id);
+      // 圆圈在环上的位置：9 个、每 40° 一个，从正上方开始顺时针；内层反向转回来，图标始终正着
+      var angle = i * 40 - 90;
+      cell.style.transform = "rotate(" + angle + "deg) translate(var(--orbit-r)) rotate(" + (-angle) + "deg)";
       var img = document.createElement("img");
-      img.className = "scene-img";
-      // 场景图：卡通地形图（SCENE_ICONS，大图裁切 + 手绘 SVG）；文件没加载就回落到代表宝可梦立绘
+      img.className = "orbit-img";
+      // 场景图：卡通地形图（SCENE_ICONS，全矢量 SVG）；文件没加载就回落到代表宝可梦立绘
       img.src = (typeof SCENE_ICONS !== "undefined" && SCENE_ICONS[sc.id]) || imgUrl(sc.art);
       img.alt = "";
       img.onerror = function () { this.style.display = "none"; };
       img.setAttribute("loading", "lazy");
-      art.appendChild(img);
-      b.appendChild(art);
-      var info = document.createElement("div");
-      info.className = "scene-info";
-      var name = document.createElement("div");
-      name.className = "scene-name";
-      name.textContent = PokeMem.Scenes.sceneName(sc.id, PokeMem.lang());
-      info.appendChild(name);
-      var types = document.createElement("div");
-      types.className = "scene-types";
-      types.innerHTML = sc.types.map(function (id) { return PokeMem.Types.typeIconHtml(id); }).join("");
-      info.appendChild(types);
-      var base = document.createElement("div");
-      base.className = "scene-base";
-      base.textContent = t("encounterBaseLevel", { level: sc.baseLevel });
-      info.appendChild(base);
-      if (locked) {
-        var lock = document.createElement("div");
-        lock.className = "scene-lock";
-        lock.textContent = t("encounterUnlock", { level: sc.unlockLevel });
-        info.appendChild(lock);
-      }
-      b.appendChild(info);
+      cell.appendChild(img);
       if (locked) {
         var badge = document.createElement("span");
-        badge.className = "scene-lock-badge";
-        badge.textContent = t("encounterUnlock", { level: sc.unlockLevel });
-        b.appendChild(badge);
+        badge.className = "orbit-lock";
+        badge.textContent = "🔒";
+        cell.appendChild(badge);
       }
-      b.addEventListener("click", function () {
-        if (locked) return;
-        ctx.encounterScene = sc.id;
-        renderScenes();
+      cell.addEventListener("mouseenter", function () { showOrbitCenter(sc); });
+      cell.addEventListener("mouseleave", function () {
+        showOrbitCenter(PokeMem.Scenes.sceneById(selectedScene()));
       });
-      list.appendChild(b);
+      cell.addEventListener("click", function () {
+        if (locked) return;
+        // 再点一次已选的 = 取消选择（转圈继续）；点别的 = 换选（转圈停住）
+        ctx.encounterScene = (ctx.encounterScene === sc.id) ? null : sc.id;
+        orbitCells.forEach(function (c) {
+          if (c.getAttribute("data-scene") === selectedScene()) c.classList.add("selected");
+          else c.classList.remove("selected");
+        });
+        showOrbitCenter(PokeMem.Scenes.sceneById(selectedScene()));
+        updateOrbitPause();
+      });
+      ring.appendChild(cell);
+      orbitCells.push(cell);
     });
+    wrap.addEventListener("mouseenter", function () { orbitHover = true; updateOrbitPause(); });
+    wrap.addEventListener("mouseleave", function () {
+      orbitHover = false;
+      showOrbitCenter(PokeMem.Scenes.sceneById(selectedScene()));
+      updateOrbitPause();
+    });
+    showOrbitCenter(PokeMem.Scenes.sceneById(selectedScene()));
+    updateOrbitPause();
   }
   // 选队格子：每种一个格子（只放形象和名字，Lv / HP / 攻击 / 亲密度不在格子上显示，在悬停 tab 里选）
   function renderTeam() {
