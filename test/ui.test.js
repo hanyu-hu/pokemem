@@ -276,5 +276,16 @@ check("战斗样式齐全（HP 条、红绿、操作按钮、子菜单）",
   css.includes(".hp-bar") && css.includes(".hp-fill") && css.includes(".hp-fill.low") &&
   css.includes(".battle-actions") && css.includes(".battle-menu") && css.includes(".battle-log"));
 
+// Task 29：遭遇战结晶每日上限 100
+const encJs = fs.readFileSync(__dirname + "/../js/encounter.js", "utf8");
+check("每日上限 100 写在遭遇战状态机里、按本地日期记",
+  encJs.includes("DAILY_CRYSTAL_CAP = 100") && encJs.includes("encounterDayKey") &&
+  encJs.includes("encounterCrystalsToday"));
+check("宝箱按剩余额度发结晶、超了标 capped、道具不受影响",
+  encJs.includes("Math.min(wanted") && encJs.includes("capped: granted < wanted"));
+check("结算屏有上限提示行（被封顶时才显示）",
+  html.includes('id="battle-settle-cap"') && encUiJs.includes("battleSettleCapped") &&
+  encUiJs.includes('chest.capped ? "" : "none"'));
+
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);
