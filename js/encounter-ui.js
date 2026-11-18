@@ -264,6 +264,8 @@
     else if (chest.items.length === 0) chestText = t("battleSettleChest", { crystals: chest.crystals });
     else chestText = t("battleSettleChestItem", { crystals: chest.crystals, item: chest.items.map(function (id) { return (ITEM_NAME[id] && ITEM_NAME[id][PokeMem.lang()]) || id; }).join("、") });
     $("battle-settle-chest").textContent = chestText;
+    $("battle-settle-cap").style.display = chest.capped ? "" : "none";
+    if (chest.capped) $("battle-settle-cap").textContent = t("battleSettleCapped");
   }
   function backToPicker() {
     ctx.encounter = null;
