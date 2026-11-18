@@ -347,13 +347,18 @@
       img.alt = "";
       img.onerror = function () { this.style.display = "none"; };
       img.setAttribute("loading", "lazy");
-      cell.appendChild(img);
+      // 图标包一层 .orbit-icon 反向转（和环同速反向），图标转圈时始终正着、底朝下；
+      // 锁也放这一层里，跟着图标一起正着，不会绕着圆圈跑
+      var icon = document.createElement("div");
+      icon.className = "orbit-icon";
+      icon.appendChild(img);
       if (locked) {
         var badge = document.createElement("span");
         badge.className = "orbit-lock";
         badge.textContent = "🔒";
-        cell.appendChild(badge);
+        icon.appendChild(badge);
       }
+      cell.appendChild(icon);
       cell.addEventListener("mouseenter", function () { showOrbitCenter(sc); });
       cell.addEventListener("mouseleave", function () {
         showOrbitCenter(PokeMem.Scenes.sceneById(selectedScene()));

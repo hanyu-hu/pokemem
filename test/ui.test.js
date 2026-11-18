@@ -180,6 +180,7 @@ check("场景卡有名字、属性图标、野生起始等级、解锁条件",
 check("场景是轨道：9 个小圆圈绕中心转，中心显示悬停或选中场景的信息",
   encUiJs.includes('"orbit-wrap"') && encUiJs.includes('"orbit-ring"') &&
   encUiJs.includes('"orbit-cell"') && encUiJs.includes('"orbit-center"') &&
+  encUiJs.includes('"orbit-icon"') && // 图标反向转那层（和环同速反向，图标始终正着）
   encUiJs.includes("SCENE_ICONS") && encUiJs.includes("imgUrl(sc.art)") && // 图标缺失时回落到代表宝可梦立绘
   encUiJs.includes("orbitPaused") && encUiJs.includes("showOrbitCenter") &&
   css.includes(".orbit-wrap") && css.includes(".orbit-ring") &&
@@ -188,8 +189,10 @@ check("场景是轨道：9 个小圆圈绕中心转，中心显示悬停或选�
 check("地形图文件在场景逻辑之后、遭遇战 UI 之前加载",
   html.indexOf("js/scenes.js") < html.indexOf("js/scene-icons.js") &&
   html.indexOf("js/scene-icons.js") < html.indexOf("js/encounter-ui.js"));
-check("会动的图：场景轨道转圈、地形图轻浮、悬停摇摆、选中脉冲、云朵飘、球里宝可梦轻浮",
-  css.includes("@keyframes orbit-spin") && css.includes("@keyframes scene-bob") && css.includes("@keyframes scene-wiggle") &&
+check("会动的图：场景轨道转圈、图标反向转（始终正着）、地形图轻浮、悬停摇摆、选中脉冲、云朵飘、球里宝可梦轻浮",
+  css.includes("@keyframes orbit-spin") && css.includes("@keyframes orbit-spin-rev") &&
+  css.includes(".orbit-icon") && css.includes(".orbit-wrap.paused .orbit-icon") &&
+  css.includes("@keyframes scene-bob") && css.includes("@keyframes scene-wiggle") &&
   css.includes("@keyframes scene-pulse") && css.includes("@keyframes ball-bob") &&
   css.includes("@keyframes cloud-drift") && css.includes(".orbit-cell:hover .orbit-img") &&
   css.includes(".orbit-cell.selected") && css.includes(".encounter-clouds") &&

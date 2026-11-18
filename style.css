@@ -170,6 +170,8 @@ button { font-family: inherit; }
 .trainer-item.zero { opacity: .45; }
 /* 会动的图（2026-11-17）：场景轨道转圈、地形图轻浮、悬停摇摆、选中脉冲、云朵飘、球里宝可梦轻浮 */
 @keyframes orbit-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* 图标反向转：环转 +36s 一圈、图标转 -36s 一圈，正负抵消，图标转圈时始终正着（底朝下） */
+@keyframes orbit-spin-rev { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
 @keyframes scene-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @keyframes scene-wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
 @keyframes scene-pulse { 0%, 100% { box-shadow: 0 4px 12px rgba(0,0,0,.08); } 50% { box-shadow: 0 4px 20px rgba(227,53,13,.45); } }
@@ -189,7 +191,7 @@ button { font-family: inherit; }
 .encounter-clouds .c2 { animation-duration: 68s; animation-delay: -40s; top: 16px; transform: scale(.7); }
 .encounter-clouds .c3 { animation-duration: 44s; animation-delay: -26s; top: 10px; transform: scale(1.25); opacity: .6; }
 @media (prefers-reduced-motion: reduce) {
-  .orbit-ring, .orbit-cell .orbit-img, .orbit-cell.selected, .team-ball.open .ball-mon, .encounter-clouds .cloud { animation: none; }
+  .orbit-ring, .orbit-icon, .orbit-cell .orbit-img, .orbit-cell.selected, .team-ball.open .ball-mon, .encounter-clouds .cloud { animation: none; }
 }
 /* 遭遇战页：场景轨道、选队格子（Task 27；场景改轨道转圈 2026-11-17） */
 .scene-list { margin: 10px 0; }
@@ -197,7 +199,9 @@ button { font-family: inherit; }
 .orbit-wrap { position: relative; width: 340px; height: 340px; margin: 6px auto 2px; --orbit-r: 132px; --orbit-cell: 58px; }
 .orbit-ring { position: absolute; inset: 0; animation: orbit-spin 36s linear infinite; }
 .orbit-wrap.paused .orbit-ring { animation-play-state: paused; }
+.orbit-wrap.paused .orbit-icon { animation-play-state: paused; } /* 停转圈时反向转也要一起停，不然图标会原地打转 */
 .orbit-cell { position: absolute; left: 50%; top: 50%; width: var(--orbit-cell); height: var(--orbit-cell); margin: calc(var(--orbit-cell) / -2) 0 0 calc(var(--orbit-cell) / -2); border-radius: 50%; border: 3px solid #fff; box-shadow: 0 3px 8px rgba(0,0,0,.18); padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.orbit-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; animation: orbit-spin-rev 36s linear infinite; }
 .orbit-cell.selected { border-color: #e3350d; }
 .orbit-cell.locked { filter: grayscale(.7); opacity: .75; cursor: not-allowed; }
 .orbit-cell .orbit-img { width: 80%; height: 80%; object-fit: contain; filter: drop-shadow(0 4px 5px rgba(0,0,0,.25)); }

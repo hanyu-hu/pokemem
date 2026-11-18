@@ -152,7 +152,8 @@ const orbitWrap = function () { return els["scene-list"].children[0]; };
 const orbitRing = function () { return orbitWrap().children[0]; };
 const orbitCenter = function () { return orbitWrap().children[1]; };
 const orbitCell = function (i) { return orbitRing().children[i]; };
-const orbitImg = function (i) { return orbitCell(i).children[0]; };
+const orbitIcon = function (i) { return orbitCell(i).children[0]; }; // 反向转那层（图标 + 锁都在里面）
+const orbitImg = function (i) { return orbitIcon(i).children[0]; };
 const centerName = function () {
   var ch = orbitCenter().children.filter(function (c) { return c.className === "orbit-name"; });
   return ch.length ? ch[0].textContent : "";
@@ -167,9 +168,11 @@ check("场景是轨道：1 个外框、环上 9 个圆圈、中间是信息区",
 check("圆圈从正上方开始排（草丛在顶上、每 40° 一个）",
   orbitCell(0).style.transform.indexOf("rotate(-90deg)") >= 0 &&
   orbitCell(2).style.transform.indexOf("rotate(-10deg)") >= 0);
-check("9 个圆圈都是矢量 SVG 地形图（没有低分辨率 PNG）",
+check("9 个圆圈都是矢量 SVG 地形图（没有低分辨率 PNG），图标包在反向转那层里、始终正着",
   orbitRing().children.every(function (cell) {
-    return cell.children[0].tagName === "IMG" && cell.children[0].src.indexOf("data:image/svg+xml;base64,") === 0;
+    return cell.children[0].className === "orbit-icon" &&
+      cell.children[0].children[0].tagName === "IMG" &&
+      cell.children[0].children[0].src.indexOf("data:image/svg+xml;base64,") === 0;
   }));
 check("中心默认显示已选的草丛（名字 + 打勾、属性图标、野生等级）",
   centerName() === "草丛 ✓" &&
@@ -180,9 +183,9 @@ check("悬停森林圆圈，中心换成森林（未解锁显示解锁条件）"
   centerName() === "森林" && centerBase().indexOf("5") >= 0);
 orbitCell(1).dispatch("mouseleave");
 check("鼠标离开圆圈，中心回到已选的草丛", centerName() === "草丛 ✓");
-check("未解锁的森林圆圈带锁、点不动",
+check("未解锁的森林圆圈带锁、点不动（锁在反向转那层里，跟着图标一起正着）",
   orbitCell(1).classList.contains("locked") &&
-  orbitCell(1).children.some(function (c) { return c.className === "orbit-lock"; }));
+  orbitIcon(1).children.some(function (c) { return c.className === "orbit-lock"; }));
 orbitCell(1).click();
 check("点未解锁场景不切换", orbitCell(0).classList.contains("selected") && !orbitCell(1).classList.contains("selected"));
 check("一开始没选、鼠标不在轨道上，转圈在转",
