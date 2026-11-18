@@ -168,6 +168,28 @@ button { font-family: inherit; }
 .trainer-item img { width: 28px; height: 28px; flex-shrink: 0; }
 .trainer-item-name { flex: 1; }
 .trainer-item.zero { opacity: .45; }
+/* 会动的图（2026-11-17）：场景地形图轻浮、悬停摇摆、选中脉冲、云朵飘、球里宝可梦轻浮 */
+@keyframes scene-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes scene-wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
+@keyframes scene-pulse { 0%, 100% { box-shadow: 0 4px 12px rgba(0,0,0,.08); } 50% { box-shadow: 0 4px 20px rgba(227,53,13,.45); } }
+@keyframes ball-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes cloud-drift { from { left: -70px; } to { left: 105%; } }
+.scene-art img { animation: scene-bob 3s ease-in-out infinite; }
+.scene-card:nth-child(3n+2) .scene-art img { animation-delay: -.9s; }
+.scene-card:nth-child(3n) .scene-art img { animation-delay: -1.7s; }
+.scene-card:hover .scene-art img { animation: scene-wiggle .5s ease-in-out; }
+.scene-card.selected { animation: scene-pulse 1.6s ease-in-out infinite; }
+.team-ball.open .ball-mon { animation: ball-bob 2.4s ease-in-out infinite; }
+.encounter-clouds { position: relative; height: 34px; overflow: hidden; margin: 2px 0 4px; pointer-events: none; }
+.encounter-clouds .cloud { position: absolute; top: 8px; width: 56px; height: 18px; background: #fff; border-radius: 20px; opacity: .85; animation: cloud-drift 52s linear infinite; }
+.encounter-clouds .cloud::before { content: ""; position: absolute; left: 10px; top: -10px; width: 22px; height: 22px; background: #fff; border-radius: 50%; }
+.encounter-clouds .cloud::after { content: ""; position: absolute; left: 26px; top: -6px; width: 16px; height: 16px; background: #fff; border-radius: 50%; }
+.encounter-clouds .c1 { animation-duration: 52s; animation-delay: -12s; top: 4px; }
+.encounter-clouds .c2 { animation-duration: 68s; animation-delay: -40s; top: 16px; transform: scale(.7); }
+.encounter-clouds .c3 { animation-duration: 44s; animation-delay: -26s; top: 10px; transform: scale(1.25); opacity: .6; }
+@media (prefers-reduced-motion: reduce) {
+  .scene-art img, .scene-card.selected, .team-ball.open .ball-mon, .encounter-clouds .cloud { animation: none; }
+}
 /* 遭遇战页：场景卡、选队格子（Task 27；场景改图片卡、tab 改一行小字 2026-11-17） */
 .scene-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
 /* 场景图片卡：整张是图（场景渐变底色 + 代表宝可梦立绘），名字/属性/等级平时藏在浮层里 */

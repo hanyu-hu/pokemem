@@ -177,11 +177,21 @@ check("场景卡用 createElement 造按钮（测试桩能点）、未解锁灰�
 check("场景卡有名字、属性图标、野生起始等级、解锁条件",
   encUiJs.includes("sceneName") && encUiJs.includes("typeIconHtml") &&
   encUiJs.includes("encounterBaseLevel") && encUiJs.includes("encounterUnlock"));
-check("场景卡是图片卡：代表宝可梦立绘 + 场景渐变底色，悬停浮层显示名字和属性",
-  encUiJs.includes('"scene-art"') && encUiJs.includes('"scene-info"') && encUiJs.includes("sc.art") &&
+check("场景卡是图片卡：卡通地形图 + 场景渐变底色，悬停浮层显示名字和属性",
+  encUiJs.includes('"scene-art"') && encUiJs.includes('"scene-info"') && encUiJs.includes("SCENE_ICONS") &&
   encUiJs.includes('"scene-img"') && encUiJs.includes('"scene-lock-badge"') &&
+  encUiJs.includes("imgUrl(sc.art)") && // 图标缺失时回落到代表宝可梦立绘
   css.includes(".scene-art") && css.includes(".scene-info") &&
   css.includes(".scene-card:hover .scene-info") && css.includes("@media (hover: none)"));
+check("地形图文件在场景逻辑之后、遭遇战 UI 之前加载",
+  html.indexOf("js/scenes.js") < html.indexOf("js/scene-icons.js") &&
+  html.indexOf("js/scene-icons.js") < html.indexOf("js/encounter-ui.js"));
+check("会动的图：场景地形图轻浮、悬停摇摆、选中脉冲、云朵飘、球里宝可梦轻浮",
+  css.includes("@keyframes scene-bob") && css.includes("@keyframes scene-wiggle") &&
+  css.includes("@keyframes scene-pulse") && css.includes("@keyframes ball-bob") &&
+  css.includes("@keyframes cloud-drift") && css.includes(".scene-card:hover .scene-art img") &&
+  css.includes(".scene-card.selected") && css.includes(".encounter-clouds") &&
+  html.includes('class="encounter-clouds"') && css.includes("prefers-reduced-motion"));
 check("选卡 tab 选项一行写全信息（小字 11px、不换行、短标签“攻”）",
   encUiJs.includes("atkShort") && css.includes(".team-pick-opt") &&
   css.includes("white-space: nowrap") && css.includes("font-size: 11px"));

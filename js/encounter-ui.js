@@ -271,7 +271,7 @@
     ctx.encounter = null;
     renderEncounter();
   }
-  // 场景卡：图片卡——场景渐变底色 + 代表宝可梦立绘；名字、会出现哪些属性、野生起始等级
+  // 场景卡：图片卡——场景渐变底色 + 卡通地形图（SCENE_ICONS）；名字、会出现哪些属性、野生起始等级
   // 平时不显示，鼠标悬停浮层才出来（手机上没有悬停，浮层常显）；未解锁的灰掉、点不动，
   // 左下角常显一个“Lv.X 解锁”小牌子，免得看不出为什么点不动
   function renderScenes() {
@@ -289,7 +289,8 @@
       art.className = "scene-art";
       var img = document.createElement("img");
       img.className = "scene-img";
-      img.src = imgUrl(sc.art);
+      // 场景图：卡通地形图（SCENE_ICONS，大图裁切 + 手绘 SVG）；文件没加载就回落到代表宝可梦立绘
+      img.src = (typeof SCENE_ICONS !== "undefined" && SCENE_ICONS[sc.id]) || imgUrl(sc.art);
       img.alt = "";
       img.onerror = function () { this.style.display = "none"; };
       img.setAttribute("loading", "lazy");

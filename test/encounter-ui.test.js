@@ -94,7 +94,7 @@ function addCard(id, level) {
 addCard(7, 50); addCard(10, 30); addCard(13, 20); addCard(16, 40); addCard(25, 60);
 sandbox.localStorage.setItem("pokemem-save-v1", JSON.stringify(state));
 // 按 index.html 的加载顺序跑
-["js/store.js", "js/util.js", "js/lang.js", "js/types.js", "js/scenes.js", "js/encounter.js",
+["js/store.js", "js/util.js", "js/lang.js", "js/types.js", "js/scenes.js", "js/scene-icons.js", "js/encounter.js",
   "js/encounter-ui.js", "js/home.js", "js/dex.js", "js/rates.js", "js/tabs.js", "js/debug.js",
   "js/register.js", "js/trainer.js", "js/boot.js"].forEach(run);
 
@@ -150,8 +150,17 @@ check("一开始两个出征按钮都禁用",
 const sceneCard = function (i) { return els["scene-list"].children[i]; };
 const sceneArt = function (i) { return sceneCard(i).children.filter(function (c) { return c.className === "scene-art"; })[0]; };
 const sceneInfo = function (i) { return sceneCard(i).children.filter(function (c) { return c.className === "scene-info"; })[0]; };
-check("场景卡有图片区（草丛是妙蛙种子立绘）",
-  !!sceneArt(0) && sceneArt(0).children.some(function (c) { return c.tagName === "IMG" && c.src.indexOf("/1.png") >= 0; }));
+check("场景卡有图片区（草丛是卡通地形图，小山丘 PNG 内嵌）",
+  !!sceneArt(0) && sceneArt(0).children.some(function (c) { return c.tagName === "IMG" && c.src.indexOf("data:image/png;base64,") === 0; }));
+check("大图里没有的城市、洞穴是同风格手绘 SVG（城市、洞穴卡也是内嵌图）",
+  sceneArt(3).children.some(function (c) { return c.tagName === "IMG" && c.src.indexOf("data:image/svg+xml;base64,") === 0; }) &&
+  sceneArt(5).children.some(function (c) { return c.tagName === "IMG" && c.src.indexOf("data:image/svg+xml;base64,") === 0; }));
+check("9 个场景卡都有地形图（没有哪张空着或回落到立绘）",
+  els["scene-list"].children.every(function (card) {
+    return card.children.some(function (c) { return c.className === "scene-art"; }) &&
+      card.children.filter(function (c) { return c.className === "scene-art"; })[0]
+        .children.some(function (c) { return c.tagName === "IMG" && c.src.indexOf("data:image/") === 0; });
+  }));
 check("场景卡悬停浮层里有名字、属性图标、野生起始等级",
   !!sceneInfo(0) &&
   sceneInfo(0).children.some(function (c) { return c.className === "scene-name" && c.textContent === "草丛"; }) &&
