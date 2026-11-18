@@ -216,7 +216,7 @@ button { font-family: inherit; }
 .orbit-cell[data-scene="champions-road"] { background: linear-gradient(160deg, #ffe9a8, #d4a437 55%, #7a4a9e); }
 .orbit-lock { position: absolute; right: -3px; bottom: -3px; font-size: 13px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
 /* 轨道中心：显示悬停或选中场景的名字、属性、野生起始等级/解锁条件 */
-.orbit-center { position: absolute; left: 50%; top: 50%; width: 128px; height: 128px; margin: -64px 0 0 -64px; border-radius: 50%; background: rgba(255,255,255,.94); box-shadow: 0 3px 10px rgba(0,0,0,.14); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; padding: 8px; pointer-events: none; }
+.orbit-center { position: absolute; left: 50%; top: 50%; width: 160px; height: 160px; margin: -80px 0 0 -80px; border-radius: 50%; background: rgba(255,255,255,.94); box-shadow: 0 3px 10px rgba(0,0,0,.14); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; padding: 8px; pointer-events: none; }
 .orbit-name { font-size: 16px; font-weight: bold; color: #333; }
 .orbit-types { display: flex; justify-content: center; gap: 3px; }
 .orbit-types .type-chip img { width: 20px; height: 20px; }
@@ -224,7 +224,7 @@ button { font-family: inherit; }
 .orbit-hint { font-size: 12px; color: #999; line-height: 1.5; }
 @media (max-width: 480px) {
   .orbit-wrap { width: 300px; height: 300px; --orbit-r: 114px; --orbit-cell: 50px; }
-  .orbit-center { width: 112px; height: 112px; margin: -56px 0 0 -56px; }
+  .orbit-center { width: 136px; height: 136px; margin: -68px 0 0 -68px; }
   .orbit-name { font-size: 14px; }
 }
 .team-cell { position: relative; background: var(--tb, #fff); border: 2px solid transparent; border-radius: 14px; padding: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.08); text-align: center; }
