@@ -271,7 +271,9 @@
     ctx.encounter = null;
     renderEncounter();
   }
-  // 场景卡：名字 + 属性图标 + 野生起始等级；未解锁的灰掉、点不动
+  // 场景卡：图片卡——场景渐变底色 + 代表宝可梦立绘；名字、会出现哪些属性、野生起始等级
+  // 平时不显示，鼠标悬停浮层才出来（手机上没有悬停，浮层常显）；未解锁的灰掉、点不动，
+  // 左下角常显一个“Lv.X 解锁”小牌子，免得看不出为什么点不动
   function renderScenes() {
     var tr = Gacha.ensureTrainer(ctx.state);
     var list = $("scene-list");
@@ -283,23 +285,42 @@
       if (locked) b.classList.add("locked");
       if (sc.id === selectedScene()) b.classList.add("selected");
       b.setAttribute("data-scene", sc.id);
+      var art = document.createElement("div");
+      art.className = "scene-art";
+      var img = document.createElement("img");
+      img.className = "scene-img";
+      img.src = imgUrl(sc.art);
+      img.alt = "";
+      img.onerror = function () { this.style.display = "none"; };
+      img.setAttribute("loading", "lazy");
+      art.appendChild(img);
+      b.appendChild(art);
+      var info = document.createElement("div");
+      info.className = "scene-info";
       var name = document.createElement("div");
       name.className = "scene-name";
       name.textContent = PokeMem.Scenes.sceneName(sc.id, PokeMem.lang());
-      b.appendChild(name);
+      info.appendChild(name);
       var types = document.createElement("div");
       types.className = "scene-types";
       types.innerHTML = sc.types.map(function (id) { return PokeMem.Types.typeIconHtml(id); }).join("");
-      b.appendChild(types);
+      info.appendChild(types);
       var base = document.createElement("div");
       base.className = "scene-base";
       base.textContent = t("encounterBaseLevel", { level: sc.baseLevel });
-      b.appendChild(base);
+      info.appendChild(base);
       if (locked) {
         var lock = document.createElement("div");
         lock.className = "scene-lock";
         lock.textContent = t("encounterUnlock", { level: sc.unlockLevel });
-        b.appendChild(lock);
+        info.appendChild(lock);
+      }
+      b.appendChild(info);
+      if (locked) {
+        var badge = document.createElement("span");
+        badge.className = "scene-lock-badge";
+        badge.textContent = t("encounterUnlock", { level: sc.unlockLevel });
+        b.appendChild(badge);
       }
       b.addEventListener("click", function () {
         if (locked) return;
@@ -311,6 +332,7 @@
   }
   // 选队格子：每种一个格子（只放形象和名字，Lv / HP / 攻击 / 亲密度不在格子上显示，在悬停 tab 里选）
   function renderTeam() {
+    clearPickTabTimers(); // 格子重绘、旧格子没了：之前悬停排队的开 tab 定时别再拿旧格子定位
     var grid = $("team-grid");
     grid.innerHTML = "";
     POKEDEX.forEach(function (row) {
@@ -345,12 +367,12 @@
       cnt.className = "team-count" + (picked ? " selected" : "");
       cnt.textContent = (picked ? "✓ " : "") + "×" + e.cards.length;
       b.appendChild(cnt);
-      b.addEventListener("click", function () { showPickTab(row[0], b); }); // 点格子 = 打开 tab（不直接选）
-      b.addEventListener("mouseenter", function () { showPickTab(row[0], b); });
+      b.addEventListener("click", function () { clearPickTabTimers(); showPickTab(row[0], b); }); // 点格子 = 立刻打开 tab（不直接选）
+      b.addEventListener("mouseenter", function () { requestPickTab(row[0], b); });
       b.addEventListener("mouseleave", function (ev) {
         var tab = $("team-pick-tab");
-        if (ev && ev.relatedTarget && tab.contains && tab.contains(ev.relatedTarget)) return; // 移进 tab 里别收
-        hidePickTab();
+        if (ev && ev.relatedTarget && tab.contains && tab.contains(ev.relatedTarget)) { clearPickTabTimers(); return; } // 移进 tab 里：取消待开/待收，别收
+        scheduleHidePickTab();
       });
       grid.appendChild(b);
     });
@@ -396,8 +418,31 @@
     }
     return b;
   }
+  // tab 难移入的修法（用户反馈 2026-11-17）：格子到 tab 的路上会经过边上的格子，
+  // 以前每个格子的 mouseenter 立刻换 tab，tab 就跟着鼠标跑、还没摸到就换了种甚至关了。
+  // 现在两件事：① 悬停要“停一下才算数”（200ms 意图延迟），快速路过边上的格子不换 tab；
+  // ② 收 tab 给 300ms 宽限，格子→tab 的路上哪怕短暂离开格子/tab 也不立刻收，
+  // 移进 tab 里就取消待收。点格子还是立刻开，不等。
+  var PICK_TAB_OPEN_DELAY = 200; // 悬停意图延迟：鼠标在一个格子上停满这么久才换 tab
+  var PICK_TAB_CLOSE_DELAY = 300; // 收 tab 宽限：离开格子/tab 后这么久才收，给移鼠标留时间
+  var pickTabShowTimer = null;
+  var pickTabHideTimer = null;
+  function clearPickTabTimers() {
+    if (pickTabShowTimer) { clearTimeout(pickTabShowTimer); pickTabShowTimer = null; }
+    if (pickTabHideTimer) { clearTimeout(pickTabHideTimer); pickTabHideTimer = null; }
+  }
+  function requestPickTab(speciesId, cell) {
+    if (openTabSpecies === speciesId && $("team-pick-tab").style.display !== "none") { clearPickTabTimers(); return; } // 已经是这个种：只取消待收，不重绘
+    clearPickTabTimers();
+    pickTabShowTimer = setTimeout(function () { pickTabShowTimer = null; showPickTab(speciesId, cell); }, PICK_TAB_OPEN_DELAY);
+  }
+  function scheduleHidePickTab() {
+    clearPickTabTimers();
+    pickTabHideTimer = setTimeout(function () { pickTabHideTimer = null; hidePickTab(); }, PICK_TAB_CLOSE_DELAY);
+  }
   // 悬停选卡 tab：鼠标移到格子上（或点格子），右边浮出该种宝可梦的全部卡，点一只上场
   function showPickTab(speciesId, cell) {
+    clearPickTabTimers();
     openTabSpecies = speciesId;
     var tab = $("team-pick-tab");
     tab.innerHTML = "";
@@ -415,13 +460,14 @@
       b.classList.add("team-pick-opt");
       if (sel) b.classList.add("selected");
       b.setAttribute("data-card", idx);
-      b.textContent = "Lv." + c.level + "　HP " + c.hp + " · " + t("atkLabel") + " " + c.atk +
-        "　" + t("encounterAffectionPoints", { n: c.affection || 0 }) + (sel ? "　✓" : "");
+      // 每张卡一行写全信息（Lv / HP / 攻 / 亲密度 + 已选勾），字小、不换行
+      b.textContent = "Lv." + c.level + " · HP" + c.hp + " · " + t("atkShort") + c.atk +
+        " · " + t("encounterAffectionPoints", { n: c.affection || 0 }) + (sel ? " ✓" : "");
       b.addEventListener("click", function () { togglePick(speciesId, idx); }); // 点选项只切换、不收 tab，可以连续选
       tab.appendChild(b);
     });
     // 定位：格子右边；靠右边缘时改放左边
-    var tabW = 190;
+    var tabW = 230;
     var left = (cell.offsetLeft || 0) + (cell.offsetWidth || 0) + 8;
     var wrap = $("team-grid-wrap");
     if (wrap && left + tabW > (wrap.offsetWidth || 0)) left = Math.max(0, (cell.offsetLeft || 0) - tabW - 8);
@@ -429,7 +475,7 @@
     tab.style.top = (cell.offsetTop || 0) + "px";
     tab.style.display = "block";
   }
-  function hidePickTab() { openTabSpecies = null; $("team-pick-tab").style.display = "none"; }
+  function hidePickTab() { clearPickTabTimers(); openTabSpecies = null; $("team-pick-tab").style.display = "none"; }
   function togglePick(speciesId, cardIndex) {
     var picks = teamPicks();
     var i = pickIndex(speciesId, cardIndex);
@@ -473,5 +519,6 @@
   $("battle-continue-btn").addEventListener("click", doContinue);
   $("battle-end-btn").addEventListener("click", doEnd);
   $("battle-settle-back-btn").addEventListener("click", backToPicker);
-  $("team-pick-tab").addEventListener("mouseleave", hidePickTab);
+  $("team-pick-tab").addEventListener("mouseenter", clearPickTabTimers); // 移进 tab 里：取消待收
+  $("team-pick-tab").addEventListener("mouseleave", scheduleHidePickTab);
 })();

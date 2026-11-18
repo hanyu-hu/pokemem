@@ -177,12 +177,24 @@ check("场景卡用 createElement 造按钮（测试桩能点）、未解锁灰�
 check("场景卡有名字、属性图标、野生起始等级、解锁条件",
   encUiJs.includes("sceneName") && encUiJs.includes("typeIconHtml") &&
   encUiJs.includes("encounterBaseLevel") && encUiJs.includes("encounterUnlock"));
+check("场景卡是图片卡：代表宝可梦立绘 + 场景渐变底色，悬停浮层显示名字和属性",
+  encUiJs.includes('"scene-art"') && encUiJs.includes('"scene-info"') && encUiJs.includes("sc.art") &&
+  encUiJs.includes('"scene-img"') && encUiJs.includes('"scene-lock-badge"') &&
+  css.includes(".scene-art") && css.includes(".scene-info") &&
+  css.includes(".scene-card:hover .scene-info") && css.includes("@media (hover: none)"));
+check("选卡 tab 选项一行写全信息（小字 11px、不换行、短标签“攻”）",
+  encUiJs.includes("atkShort") && css.includes(".team-pick-opt") &&
+  css.includes("white-space: nowrap") && css.includes("font-size: 11px"));
+check("选卡 tab 悬停意图延迟 + 收起宽限（路过边上的格子不换 tab、移进 tab 取消待收）",
+  encUiJs.includes("PICK_TAB_OPEN_DELAY") && encUiJs.includes("PICK_TAB_CLOSE_DELAY") &&
+  encUiJs.includes("requestPickTab") && encUiJs.includes("scheduleHidePickTab") &&
+  encUiJs.includes("clearPickTabTimers"));
 check("选队格子每种一个格子、格子上不显示数值（数值在悬停 tab 里选）",
   encUiJs.includes('"team-cell"') && encUiJs.includes("每种一个格子") &&
   !encUiJs.includes('"team-stat"') && !encUiJs.includes('"team-affection"') &&
   encUiJs.includes("encounterAffectionPoints")); // tab 里仍显示亲密度（直接写点数）
 check("点格子只打开 tab、不直接选",
-  encUiJs.includes("点格子 = 打开 tab") && !encUiJs.includes("toggleSpecies"));
+  encUiJs.includes("点格子 = 立刻打开 tab") && !encUiJs.includes("toggleSpecies"));
 check("选队最多 6 张、超了弹提示",
   encUiJs.includes("slot < 0") && encUiJs.includes("encounterTeamFull"));
 check("开始按钮没选队时禁用、开始后记进 ctx.encounter",
@@ -224,9 +236,9 @@ check("球是固定槽：点哪只取消哪只、新卡放第一个空球",
   encUiJs.includes("第一个空球") && encUiJs.includes("picks[i] = null") && encUiJs.includes("picks[slot]"));
 check("出征时空球不进战斗队伍",
   encUiJs.includes("filter(function (p) { return !!p; })"));
-check("选卡 tab 改小（窄一点、字体小一点）",
-  css.includes("width: 190px") && /\.team-pick-title\s*\{[^}]*font-size:\s*12px/.test(css) &&
-  /\.team-pick-opt\s*\{[^}]*font-size:\s*12px/.test(css) && encUiJs.includes("tabW = 190"));
+check("选卡 tab 一行全信息：放宽到 230px、选项 11px 不换行（第四轮的 190px/12px 已让位给一行）",
+  css.includes("width: 230px") && /\.team-pick-title\s*\{[^}]*font-size:\s*12px/.test(css) &&
+  /\.team-pick-opt\s*\{[^}]*font-size:\s*11px/.test(css) && encUiJs.includes("tabW = 230"));
 check("格子底色按主属性染成卡片色（选了也不盖掉底色）",
   encUiJs.includes('"tbg-"') && css.includes(".team-cell { position: relative; background: var(--tb, #fff);") &&
   css.includes(".team-cell.selected { border-color: #e3350d; }"));

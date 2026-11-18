@@ -21,6 +21,14 @@ check("基础等级 5/8/12/16/22/30/38/48/60（草丛是 5，不是 3：全表 m
   Scenes.SCENES.map(s => s.baseLevel).join(",") === "5,8,12,16,22,30,38,48,60");
 check("15 个属性全覆盖",
   new Set(Scenes.SCENES.flatMap(s => s.types)).size === 15);
+check("每个场景有代表宝可梦（art，图鉴 1–151，不重复）",
+  Scenes.SCENES.every(function (s) { return s.art >= 1 && s.art <= 151; }) &&
+  new Set(Scenes.SCENES.map(function (s) { return s.art; })).size === 9);
+check("代表宝可梦的主属性在场景属性里（草丛妙蛙种子是草、冠军之路快龙是龙）",
+  Scenes.SCENES.every(function (s) {
+    var row = POKEDEX[s.art - 1];
+    return !!row && s.types.indexOf(Types.parseTypes(row[3])[0]) >= 0;
+  }));
 
 // 2. 查场景与名字
 check("sceneById 草丛", Scenes.sceneById("grassland") && Scenes.sceneById("grassland").zh === "草丛");

@@ -53,6 +53,7 @@ var I18N = {
     legacyNote: "另有 {n} 张旧卡（v1.5 前抽的）无单独数值",
     perCardRate: "单只概率",
     atkLabel: "攻击",
+    atkShort: "攻", // 选卡 tab 一行全信息用的短标签（比“攻击”省一个字，190→230px 的 tab 一行才放得下）
     pityBadge: "保底",
     missingName: "？？？",
     errorPrefix: "出错了：{msg}，截图发我看一下。",
@@ -193,6 +194,7 @@ var I18N = {
     legacyNote: "Plus {n} older cards (drawn before v1.5) with no individual stats",
     perCardRate: "Per-card rate",
     atkLabel: "ATK",
+    atkShort: "ATK", // 选卡 tab 一行全信息用的短标签（英文和 atkLabel 一样长）
     pityBadge: "Pity",
     missingName: "???",
     errorPrefix: "Error: {msg} — screenshot this and send it to me.",

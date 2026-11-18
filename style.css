@@ -168,16 +168,33 @@ button { font-family: inherit; }
 .trainer-item img { width: 28px; height: 28px; flex-shrink: 0; }
 .trainer-item-name { flex: 1; }
 .trainer-item.zero { opacity: .45; }
-/* 遭遇战页：场景卡、选队格子（Task 27） */
+/* 遭遇战页：场景卡、选队格子（Task 27；场景改图片卡、tab 改一行小字 2026-11-17） */
 .scene-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
-.scene-card { background: #fff; border: 2px solid transparent; border-radius: 14px; padding: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.08); text-align: center; }
-.scene-card.selected { border-color: #e3350d; background: #fff0ec; }
+/* 场景图片卡：整张是图（场景渐变底色 + 代表宝可梦立绘），名字/属性/等级平时藏在浮层里 */
+.scene-card { position: relative; padding: 0; overflow: hidden; border: 2px solid transparent; border-radius: 14px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.08); aspect-ratio: 4 / 3; }
+.scene-card.selected { border-color: #e3350d; }
 .scene-card.locked { opacity: .45; cursor: not-allowed; }
-.scene-name { font-size: 15px; font-weight: bold; color: #333; }
-.scene-types { display: flex; justify-content: center; gap: 4px; margin: 6px 0; }
+.scene-art { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.scene-art img { width: 76%; max-height: 88%; object-fit: contain; filter: drop-shadow(0 6px 8px rgba(0,0,0,.28)); }
+.scene-card[data-scene="grassland"] .scene-art { background: linear-gradient(160deg, #cdeeb4, #79b657 55%, #4e8f3a); }
+.scene-card[data-scene="forest"] .scene-art { background: linear-gradient(160deg, #a8d8a0, #3f7d44 55%, #245c2e); }
+.scene-card[data-scene="stream"] .scene-art { background: linear-gradient(160deg, #bfe6f5, #5aa9d6 55%, #2f7fb8); }
+.scene-card[data-scene="city"] .scene-art { background: linear-gradient(160deg, #ffd9a0, #e89b5f 55%, #b45a30); }
+.scene-card[data-scene="desert"] .scene-art { background: linear-gradient(160deg, #ffe9b0, #e8b96a 55%, #c08a3e); }
+.scene-card[data-scene="cave"] .scene-art { background: linear-gradient(160deg, #b9a8cc, #6b5a8a 55%, #3d2f56); }
+.scene-card[data-scene="ocean"] .scene-art { background: linear-gradient(160deg, #a8d8f0, #3f7fc9 55%, #1e4f8f); }
+.scene-card[data-scene="glacier"] .scene-art { background: linear-gradient(160deg, #eef7ff, #a8d4ee 55%, #6fa8d8); }
+.scene-card[data-scene="champions-road"] .scene-art { background: linear-gradient(160deg, #ffe9a8, #d4a437 55%, #7a4a9e); }
+/* 悬停浮层：深色半透明盖住整张卡，居中显示场景名、会出现哪些属性、野生起始等级 */
+.scene-info { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px; background: rgba(20,20,30,.62); opacity: 0; transition: opacity .18s; }
+.scene-card:hover .scene-info, .scene-card:focus-visible .scene-info { opacity: 1; }
+@media (hover: none) { .scene-card .scene-info { opacity: 1; } } /* 手机上没有悬停：浮层常显 */
+.scene-name { font-size: 17px; font-weight: bold; color: #fff; }
+.scene-types { display: flex; justify-content: center; gap: 4px; }
 .scene-types .type-chip img { width: 22px; height: 22px; }
-.scene-base { font-size: 12px; color: #666; }
-.scene-lock { font-size: 12px; color: #e3350d; margin-top: 4px; }
+.scene-base { font-size: 12px; color: #ffe9a8; }
+.scene-lock { font-size: 12px; color: #ffb3a7; }
+.scene-lock-badge { position: absolute; left: 6px; bottom: 6px; z-index: 2; background: rgba(0,0,0,.55); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 8px; }
 .team-cell { position: relative; background: var(--tb, #fff); border: 2px solid transparent; border-radius: 14px; padding: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.08); text-align: center; }
 .team-cell.selected { border-color: #e3350d; }
 .team-cell img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; }
@@ -206,9 +223,9 @@ button { font-family: inherit; }
 .team-ball .ball-lv { position: absolute; left: 0; right: 0; bottom: 0; font-size: 11px; color: #666; text-align: center; }
 /* 悬停选卡 tab：格子右边浮出，列出该种的全部卡 */
 .team-grid-wrap { position: relative; }
-.team-pick-tab { position: absolute; width: 190px; background: #fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 8px; z-index: 30; }
+.team-pick-tab { position: absolute; width: 230px; background: #fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.18); padding: 8px; z-index: 30; }
 .team-pick-title { font-size: 12px; font-weight: bold; color: #333; margin-bottom: 6px; }
-.team-pick-opt { display: block; width: 100%; text-align: left; padding: 6px 8px; margin-top: 4px; border: 1px solid #f0c9c0; background: #fff; border-radius: 10px; font-size: 12px; cursor: pointer; }
+.team-pick-opt { display: block; width: 100%; text-align: left; padding: 6px 8px; margin-top: 4px; border: 1px solid #f0c9c0; background: #fff; border-radius: 10px; font-size: 11px; white-space: nowrap; cursor: pointer; }
 .team-pick-opt:hover { background: #fff0ec; }
 .team-pick-opt.selected { border-color: #e3350d; background: #fff0ec; font-weight: bold; }
 @media (max-width: 480px) {
