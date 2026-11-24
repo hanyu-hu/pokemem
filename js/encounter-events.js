@@ -7,7 +7,8 @@
 // 触发（设计稿 encounter-events.md）：开场第一步固定是战斗，之后每次点「继续前进」
 // 时 roll 一次——70% 野生战斗 / 30% 随机事件；事件当场结算（效果立即生效并保存）。
 // 结晶与每日上限（用户定 2026-11-23）：事件给的结晶同样计入每日 100 上限；
-// 今天已到上限时，给结晶的事件不再出现——roll 到它就替换成流星（下一只野生稀有度至少 SR）。
+// 今天已到上限时，给结晶的事件不再出现——roll 到它就替换成流星（本次遭遇战结算奖励翻倍）。
+// 流星本身是独立 1% 概率（用户定 2026-11-23）：先单独 roll 一次，中了直接出流星。
 // 负面事件先不给补偿（用户定 2026-11-23）。
 (function (root) {
   "use strict";
@@ -22,7 +23,7 @@
   // CHEST_ITEM_POOL 保持一致（改一边要改另一边）。
   var ITEM_POOL = ["poke_ball", "great_ball", "ultra_ball", "fire_stone",
     "water_stone", "thunder_stone", "leaf_stone", "moon_stone"];
-  var METEOR_ID = "meteor"; // 流星：封顶替换的目标事件（给结晶的事件被它替换）
+  var METEOR_ID = "meteor"; // 流星：封顶替换的目标事件（给结晶的事件被它替换）；效果是本次遭遇战结算奖励翻倍
 
   // 事件表（43 种；设计稿 encounter-events.md）。
   // scenes 为 null = 全部场景；text 是事件屏上显示的效果文案，{n} 在结算时换成实际数
@@ -135,8 +136,8 @@
       text: { zh: "发现了隐藏的洞穴！获得 {n} 梦想结晶", en: "You found a hidden cave! You got {n} Dream Crystals." },
       fx: { crystals: 10 } },
     { id: "meteor", zh: "流星", en: "Meteor", kind: "reward", scenes: null, weight: "rare",
-      text: { zh: "夜空划过一颗流星……下一只野生宝可梦稀有度至少为 SR！", en: "A meteor streaks across the sky... The next wild Pokémon will be at least SR!" },
-      fx: { minTierNext: "SR" } },
+      text: { zh: "夜空划过一颗流星……本次遭遇战结算奖励翻倍！", en: "A meteor streaks across the sky... This encounter's settlement rewards are doubled!" },
+      fx: { chestMult: 2 } },
     { id: "angler-gift", zh: "钓鱼佬的馈赠", en: "Angler's Gift", kind: "reward", scenes: ["stream", "ocean"], weight: "uncommon",
       text: { zh: "钓鱼佬送了你 1 高级球", en: "An angler gave you 1 Ultra Ball." },
       fx: { items: { ultra_ball: 1 } } },
@@ -200,11 +201,14 @@
     return t.encounterCrystalsDay === Gacha.encounterDayKey(now) &&
       t.encounterCrystalsToday >= Gacha.DAILY_CRYSTAL_CAP;
   }
-  // 按权重 roll 一个事件；roll 到给结晶的事件、且今天已到上限时，替换成流星
-  // （下一只野生稀有度至少 SR）。没有可选事件时返回 null（调用方回落到战斗）。
+  // 按权重 roll 一个事件。流星是独立 1% 概率（用户定 2026-11-23）：先单独 roll 一次，
+  // 中了就直接出流星；没中再按权重 roll 其他事件（流星不进权重池，不然概率就不是 1%）。
+  // roll 到给结晶的事件、且今天已到上限时，替换成流星（结算奖励翻倍）。
+  // 没有可选事件时返回 null（调用方回落到战斗）。
   function rollEvent(enc, state, rng, now) {
     rng = rng || Math.random;
-    var pool = eligibleEvents(enc);
+    if (rng() < 0.01) return eventById(METEOR_ID);
+    var pool = eligibleEvents(enc).filter(function (e) { return e.id !== METEOR_ID; });
     if (!pool.length) return null;
     var total = 0;
     pool.forEach(function (e) { total += WEIGHTS[e.weight] || 0; });
@@ -227,7 +231,7 @@
   // 运行期修正值（enc.mods，Task 32 在开场时初始化；这里没初始化就先补一个）
   function ensureMods(enc) {
     if (!enc.mods) enc.mods = { atkBonus: 0, critBonus: 0, damageMultNext: 1, catchMultNext: 1,
-      forceFirstNext: false, forceWildFirstNext: false, wildLevelBonus: 0, minTierNext: null };
+      forceFirstNext: false, forceWildFirstNext: false, wildLevelBonus: 0, minTierNext: null, chestMult: 1 };
     return enc.mods;
   }
   function healMember(m, pct) { // 回血按最大 HP 算（回 30% 生命 = 最大生命的 30%）
@@ -295,6 +299,7 @@
     if (fx.forceWildFirstNext) mods.forceWildFirstNext = true;
     if (typeof fx.wildLevelBonus === "number") mods.wildLevelBonus += fx.wildLevelBonus;
     if (typeof fx.minTierNext === "string") mods.minTierNext = fx.minTierNext;
+    if (typeof fx.chestMult === "number") mods.chestMult = fx.chestMult; // 流星：本次遭遇战结算奖励翻倍
     if (typeof fx.crystals === "number") {
       var grant = Gacha.grantEncounterCrystals(state, fx.crystals, now);
       result.grantedCrystals = grant.granted;

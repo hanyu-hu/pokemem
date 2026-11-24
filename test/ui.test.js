@@ -311,7 +311,7 @@ check("每日上限 100 写在抽卡核心里、按本地日期记",
   gachaJs.includes("encounterCrystalsToday") &&
   encJs.includes("DAILY_CRYSTAL_CAP = Gacha.DAILY_CRYSTAL_CAP"));
 check("宝箱按剩余额度发结晶、超了标 capped、道具不受影响",
-  encJs.includes("grantEncounterCrystals(state, wanted, now)") && encJs.includes("capped: grant.capped"));
+  encJs.includes("grantEncounterCrystals(state, wanted * chestMult, now)") && encJs.includes("capped: grant.capped"));
 check("结算屏有上限提示行（被封顶时才显示）",
   html.includes('id="battle-settle-cap"') && encUiJs.includes("battleSettleCapped") &&
   encUiJs.includes('chest.capped ? "" : "none"'));

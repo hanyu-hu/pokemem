@@ -66,15 +66,22 @@ Object.keys(expectedCounts).forEach(function (sc) {
 const sRoll = makeState();
 addCard(sRoll, 1, 50); addCard(sRoll, 4, 50);
 const encRoll = makeEnc(sRoll, "grassland", [{ speciesId: 1, cardIndex: 0 }, { speciesId: 4, cardIndex: 0 }]);
-check("roll：rng 0 → 表里第一个草丛事件（路见不平）",
-  Events.rollEvent(encRoll, sRoll, function () { return 0; }).id === "help-stranger");
+check("roll：第一轮没中流星、第二轮 rng 0 → 表里第一个草丛事件（路见不平）",
+  Events.rollEvent(encRoll, sRoll, seq([0.5, 0])).id === "help-stranger");
 check("roll：rng 0.999 → 表里最后一个草丛事件（草丛里的蛋）",
   Events.rollEvent(encRoll, sRoll, function () { return 0.999; }).id === "grass-egg");
-// 城市事件权重合计 152（1 人队时难走的道路不在候选里），训练师挑战占 [10, 20)：rng 15/152 落在里面
+check("流星：1% 独立 roll，rng 0.005 → 流星",
+  Events.rollEvent(encRoll, sRoll, function () { return 0.005; }).id === "meteor");
+check("流星：不在权重池里——第一轮没中后怎么 roll 都不是流星",
+  [0.1, 0.3, 0.5, 0.7, 0.9, 0.99].every(function (r) {
+    return Events.rollEvent(encRoll, sRoll, seq([0.5, r])).id !== "meteor";
+  }));
+// 城市权重池合计 150（1 人队时难走的道路不在候选里，流星走独立 1% 不进池），
+// 训练师挑战占 [10, 20)：rng 0.1 落在里面
 const sCap = makeState();
 addCard(sCap, 1, 50);
 const encCap = makeEnc(sCap, "city", [{ speciesId: 1, cardIndex: 0 }]);
-const duelRng = function () { return 15 / 152; };
+const duelRng = function () { return 0.1; };
 check("roll：没到上限时 roll 到训练师挑战",
   Events.rollEvent(encCap, sCap, duelRng).id === "trainer-duel");
 const tCap = Gacha.ensureTrainer(sCap);
@@ -82,8 +89,8 @@ tCap.encounterCrystalsDay = Gacha.encounterDayKey(new Date(2026, 10, 23));
 tCap.encounterCrystalsToday = 100;
 check("roll：到上限时给结晶的事件替换成流星",
   Events.rollEvent(encCap, sCap, duelRng, new Date(2026, 10, 23)).id === "meteor");
-// 掉钱包占 [115, 125)：rng 120/152 落在里面（直接给结晶的事件也要能替换）
-const walletRng = function () { return 120 / 152; };
+// 掉钱包占 [115, 125)：rng 0.8 落在里面（直接给结晶的事件也要能替换）
+const walletRng = function () { return 0.8; };
 const sCap2 = makeState();
 addCard(sCap2, 1, 50);
 const encCap2 = makeEnc(sCap2, "city", [{ speciesId: 1, cardIndex: 0 }]);
@@ -197,8 +204,11 @@ Events.applyEvent(encMod, sMod, Events.eventById("rainstorm"), function () { ret
 check("暴雨：下一场野生先攻", encMod.mods.forceWildFirstNext === true);
 Events.applyEvent(encMod, sMod, Events.eventById("lost-way"), function () { return 0; });
 check("迷路：本场剩余野生等级 +3", encMod.mods.wildLevelBonus === 3);
-Events.applyEvent(encMod, sMod, Events.eventById("meteor"), function () { return 0; });
-check("流星：下一只野生至少 SR", encMod.mods.minTierNext === "SR");
+const meteorRes = Events.applyEvent(encMod, sMod, Events.eventById("meteor"), function () { return 0; });
+check("流星：结算倍率 chestMult = 2",
+  encMod.mods.chestMult === 2 && encMod.mods.atkBonus === 5);
+check("流星文案：中文有翻倍",
+  meteorRes.textZh.indexOf("翻倍") >= 0 && meteorRes.textEn.indexOf("doubled") >= 0);
 Events.applyEvent(encMod, sMod, Events.eventById("cheer-song"), function () { return 0; });
 check("歌声：全队暴击率 +10%", encMod.mods.critBonus === 10);
 Events.applyEvent(encMod, sMod, Events.eventById("noisy-mon"), function () { return 0; });

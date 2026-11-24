@@ -266,13 +266,16 @@
     var trainer = Gacha.ensureTrainer(state);
     var wanted = enc.kos + enc.highLevelWins;
     // 每日上限 100：走 Gacha.grantEncounterCrystals（跨天清零、按剩余额度发）；
-    // 道具 roll 不受结晶上限影响
-    var grant = Gacha.grantEncounterCrystals(state, wanted, now);
+    // 流星事件会把 chestMult 设成 2（本次遭遇战结算奖励翻倍）：结晶数 ×2（仍受每日上限封顶），
+    // 道具 roll 中了也 ×2（同一道具给两份）
+    var chestMult = (enc.mods && typeof enc.mods.chestMult === "number") ? enc.mods.chestMult : 1;
+    var grant = Gacha.grantEncounterCrystals(state, wanted * chestMult, now);
     var granted = grant.granted;
     var items = [];
     var odds = enc.highLevelWins >= 5 ? 0.6 : enc.highLevelWins >= 3 ? 0.3 : 0;
     if (odds > 0 && rng() < odds) {
-      items.push(CHEST_ITEM_POOL[Math.min(CHEST_ITEM_POOL.length - 1, Math.floor(rng() * CHEST_ITEM_POOL.length))]);
+      var itemId = CHEST_ITEM_POOL[Math.min(CHEST_ITEM_POOL.length - 1, Math.floor(rng() * CHEST_ITEM_POOL.length))];
+      for (var k = 0; k < chestMult; k++) items.push(itemId);
     }
     items.forEach(function (id) { trainer.items[id] = (trainer.items[id] || 0) + 1; });
     enc.chest = { crystals: granted, items: items, capped: grant.capped };
