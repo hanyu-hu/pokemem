@@ -87,8 +87,8 @@ check("roll：没到上限时 roll 到训练师挑战",
 const tCap = Gacha.ensureTrainer(sCap);
 tCap.encounterCrystalsDay = Gacha.encounterDayKey(new Date(2026, 10, 23));
 tCap.encounterCrystalsToday = 100;
-check("roll：到上限时给结晶的事件替换成流星",
-  Events.rollEvent(encCap, sCap, duelRng, new Date(2026, 10, 23)).id === "meteor");
+check("roll：到上限时给结晶的事件照常出现（不再替换成流星）",
+  Events.rollEvent(encCap, sCap, duelRng, new Date(2026, 10, 23)).id === "trainer-duel");
 // 掉钱包占 [115, 125)：rng 0.8 落在里面（直接给结晶的事件也要能替换）
 const walletRng = function () { return 0.8; };
 const sCap2 = makeState();
@@ -99,8 +99,8 @@ check("roll：没到上限时 roll 到掉钱包",
 const tCap2 = Gacha.ensureTrainer(sCap2);
 tCap2.encounterCrystalsDay = Gacha.encounterDayKey(new Date(2026, 10, 23));
 tCap2.encounterCrystalsToday = 100;
-check("roll：到上限时直接给结晶的事件也替换成流星",
-  Events.rollEvent(encCap2, sCap2, walletRng, new Date(2026, 10, 23)).id === "meteor");
+check("roll：到上限时直接给结晶的事件照常出现",
+  Events.rollEvent(encCap2, sCap2, walletRng, new Date(2026, 10, 23)).id === "lost-wallet");
 check("封顶判断：今天 100 = 到上限，明天 = 没到",
   Events.isCappedToday(sCap, new Date(2026, 10, 23)) === true &&
   Events.isCappedToday(sCap, new Date(2026, 10, 24)) === false);
@@ -108,6 +108,33 @@ check("给结晶判断：钱包/训练师挑战算，宝可梦中心不算",
   Events.grantsCrystals(Events.eventById("lost-wallet")) === true &&
   Events.grantsCrystals(Events.eventById("trainer-duel")) === true &&
   Events.grantsCrystals(Events.eventById("pokemon-center")) === false);
+
+// 3b. 到上限：事件结晶改亲密度 +1（满了无效）
+const DAY23 = new Date(2026, 10, 23, 12);
+function cappedState() {
+  const s = makeState();
+  addCard(s, 1, 50);
+  const t = Gacha.ensureTrainer(s);
+  t.encounterCrystalsDay = "2026-11-23";
+  t.encounterCrystalsToday = 100;
+  return { s: s, e: makeEnc(s, "grassland", [{ speciesId: 1, cardIndex: 0 }]) };
+}
+let cf1 = cappedState();
+const capWalletRes1 = Events.applyEvent(cf1.e, cf1.s, Events.eventById("lost-wallet"), function () { return 0; }, DAY23);
+check("到上限：掉钱包发 0 结晶、改给出战卡亲密度 +1、文案有说明",
+  capWalletRes1.grantedCrystals === 0 && capWalletRes1.capped === true && capWalletRes1.affectionGain === 1 &&
+  cf1.e.team[0].card.affection === 1 && capWalletRes1.textZh.indexOf("亲密度 +1") >= 0);
+cf1.e.team[0].card.affection = 100;
+const capWalletRes2 = Events.applyEvent(cf1.e, cf1.s, Events.eventById("lost-wallet"), function () { return 0; }, DAY23);
+check("到上限：出战卡亲密度满 10 级、转换无效、文案有说明",
+  capWalletRes2.affectionGain === 0 && cf1.e.team[0].card.affection === 100 &&
+  capWalletRes2.textZh.indexOf("已满") >= 0);
+let cf2 = cappedState();
+Gacha.ensureTrainer(cf2.s).encounterCrystalsToday = 98;
+const capWalletRes3 = Events.applyEvent(cf2.e, cf2.s, Events.eventById("lost-wallet"), function () { return 0; }, DAY23);
+check("到上限：部分封顶也转（98 + 5 只发 2、剩下的改亲密度 +1）",
+  capWalletRes3.grantedCrystals === 2 && capWalletRes3.affectionGain === 1 &&
+  cf2.e.team[0].card.affection === 1);
 
 // 4. 难走的道路：1 只可用时不触发，4 只时倒一半
 const sRoad = makeState();

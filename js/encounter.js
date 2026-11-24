@@ -271,6 +271,19 @@
     var chestMult = (enc.mods && typeof enc.mods.chestMult === "number") ? enc.mods.chestMult : 1;
     var grant = Gacha.grantEncounterCrystals(state, wanted * chestMult, now);
     var granted = grant.granted;
+    // 到上限被封顶的部分改给亲密度 +2（用户定 2026-11-23）：给当前出战卡，满 10 级就无效
+    var affectionGain = 0;
+    if (grant.capped) {
+      var active = activeMember(enc);
+      if (active) {
+        CardProgress.normalizeCardProgress(active.card);
+        if (CardProgress.affectionLevel(active.card.affection) < CardProgress.AFFECTION_MAX_LEVEL) {
+          active.card.affection = Math.min(CardProgress.AFFECTION_MAX_LEVEL * CardProgress.AFFECTION_POINTS_PER_LEVEL,
+            (active.card.affection || 0) + 2);
+          affectionGain = 2;
+        }
+      }
+    }
     var items = [];
     var odds = enc.highLevelWins >= 5 ? 0.6 : enc.highLevelWins >= 3 ? 0.3 : 0;
     if (odds > 0 && rng() < odds) {
@@ -278,9 +291,9 @@
       for (var k = 0; k < chestMult; k++) items.push(itemId);
     }
     items.forEach(function (id) { trainer.items[id] = (trainer.items[id] || 0) + 1; });
-    enc.chest = { crystals: granted, items: items, capped: grant.capped };
+    enc.chest = { crystals: granted, items: items, capped: grant.capped, affection: affectionGain };
     enc.phase = "done";
-    log(enc, { t: "chest", crystals: granted, items: items, capped: grant.capped });
+    log(enc, { t: "chest", crystals: granted, items: items, capped: grant.capped, affection: affectionGain });
     return enc.chest;
   }
   // 撤退：立刻离开遭遇战并开宝箱结算（按当前进度），野生不攻击

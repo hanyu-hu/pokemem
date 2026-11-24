@@ -7,7 +7,9 @@
 // 触发（设计稿 encounter-events.md）：开场第一步固定是战斗，之后每次点「继续前进」
 // 时 roll 一次——70% 野生战斗 / 30% 随机事件；事件当场结算（效果立即生效并保存）。
 // 结晶与每日上限（用户定 2026-11-23）：事件给的结晶同样计入每日 100 上限；
-// 今天已到上限时，给结晶的事件不再出现——roll 到它就替换成流星（本次遭遇战结算奖励翻倍）。
+// 今天已到上限时，结晶不再发、改给亲密度：事件直接给的结晶 → 出战卡亲密度 +1；
+// 宝箱结算被封顶的部分 → 出战卡亲密度 +2；亲密度满 10 级就无效（什么都不给）。
+// 胜场战利品的结晶（Task 32 的 pendingBonus）到上限时也是 +1，在发战利品的地方转。
 // 流星本身是独立 1% 概率（用户定 2026-11-23）：先单独 roll 一次，中了直接出流星。
 // 负面事件先不给补偿（用户定 2026-11-23）。
 (function (root) {
@@ -203,8 +205,9 @@
   }
   // 按权重 roll 一个事件。流星是独立 1% 概率（用户定 2026-11-23）：先单独 roll 一次，
   // 中了就直接出流星；没中再按权重 roll 其他事件（流星不进权重池，不然概率就不是 1%）。
-  // roll 到给结晶的事件、且今天已到上限时，替换成流星（结算奖励翻倍）。
-  // 没有可选事件时返回 null（调用方回落到战斗）。
+  // 到上限也不替换了（用户定 2026-11-23）：给结晶的事件照常 roll 到，结晶改亲密度的转换
+  // 在 applyEvent / 宝箱结算里做。没有可选事件时返回 null（调用方回落到战斗）。
+  // state/now 现在不用，留着是给 Task 32 的调用口径。
   function rollEvent(enc, state, rng, now) {
     rng = rng || Math.random;
     if (rng() < 0.01) return eventById(METEOR_ID);
@@ -219,7 +222,6 @@
       r -= WEIGHTS[pool[i].weight] || 0;
       if (r < 0) { picked = pool[i]; break; }
     }
-    if (grantsCrystals(picked) && state && isCappedToday(state, now)) return eventById(METEOR_ID);
     return picked;
   }
   function fmt(text, n) { return String(text).replace(/\{n\}/g, String(n)); }
@@ -303,7 +305,18 @@
     if (typeof fx.crystals === "number") {
       var grant = Gacha.grantEncounterCrystals(state, fx.crystals, now);
       result.grantedCrystals = grant.granted;
-      if (grant.capped) result.capped = true;
+      if (grant.capped) {
+        result.capped = true;
+        // 到上限被封顶的部分改给亲密度 +1（用户定 2026-11-23）：给当前出战卡，满 10 级就无效
+        if (active) {
+          CardProgress.normalizeCardProgress(active.card);
+          if (CardProgress.affectionLevel(active.card.affection) < CardProgress.AFFECTION_MAX_LEVEL) {
+            active.card.affection = Math.min(CardProgress.AFFECTION_MAX_LEVEL * CardProgress.AFFECTION_POINTS_PER_LEVEL,
+              (active.card.affection || 0) + 1);
+            result.affectionGain = 1;
+          }
+        }
+      }
     }
     if (typeof fx.candy === "number") { trainer.candy += fx.candy; result.awards.candy = (result.awards.candy || 0) + fx.candy; }
     if (fx.items) Object.keys(fx.items).forEach(function (id) {
@@ -338,14 +351,14 @@
     });
   }
   // 结算一个事件（非战斗类当场生效；战斗类只返回开打参数，战斗由 Task 32 接手）。
-  // 返回 { event, kind, battle, textZh, textEn, awards, grantedCrystals, capped, levels,
+  // 返回 { event, kind, battle, textZh, textEn, awards, grantedCrystals, capped, affectionGain, levels,
   //   branch（随机分支事件 roll 到哪个分支，0/1）, needsPick（出战卡被事件打倒了，下一场要先选卡）,
   //   wiped（全队倒下） }。
   // 调用方负责保存存档（事件效果立即写进存档，刷新不丢，和每轮奖励一样）。
   function applyEvent(enc, state, event, rng, now) {
     rng = rng || Math.random;
     var result = { event: event, kind: event.kind, battle: null, awards: {},
-      grantedCrystals: 0, capped: false, levels: 0, needsPick: false, wiped: false };
+      grantedCrystals: 0, capped: false, affectionGain: 0, levels: 0, needsPick: false, wiped: false };
     if (event.kind === "battle") {
       result.battle = event.battle;
       // 介绍里的 {n} 是胜场战利品的结晶数（表里的数；赢时真发多少按当时上限算）
@@ -360,6 +373,16 @@
     var n = (event.fx && typeof event.fx.crystals === "number") ? result.grantedCrystals : undefined;
     result.textZh = eventText(event, "zh", n);
     result.textEn = eventText(event, "en", n);
+    // 到上限转了亲密度（或亲密度已满没得转），文案里补一句说明
+    if (result.capped && event.fx && typeof event.fx.crystals === "number") {
+      if (result.affectionGain > 0) {
+        result.textZh += "（今天已到上限，剩下的改为出战宝可梦亲密度 +1）";
+        result.textEn += " (Daily cap reached — the rest becomes +1 affection for the active Pokémon instead)";
+      } else {
+        result.textZh += "（今天已到上限，出战宝可梦亲密度已满）";
+        result.textEn += " (Daily cap reached — the active Pokémon's affection is already maxed)";
+      }
+    }
     var active = enc.team && enc.team[enc.activeIndex];
     if (usableMembers(enc).length === 0) { result.wiped = true; }
     else if (active && active.hp <= 0) { enc.needsPick = true; result.needsPick = true; }

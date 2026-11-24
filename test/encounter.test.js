@@ -247,6 +247,26 @@ check("流星：翻倍后仍受每日上限封顶（应得 10、只剩 4 → 发
   chM3.crystals === 4 && chM3.capped === true &&
   Gacha.ensureTrainer(m3.s).encounterCrystalsToday === 100);
 
+// Task 31：到上限——宝箱被封顶的部分改给亲密度 +2（满了无效）
+let a1 = chestState(3, 2); // 应得 5
+Gacha.ensureTrainer(a1.s).encounterCrystalsDay = "2026-11-17";
+Gacha.ensureTrainer(a1.s).encounterCrystalsToday = 98;
+const chA1 = Encounter.settleChest(a1.e, a1.s, () => 0.9, DAY1);
+check("到上限：宝箱应得 5 只发 2、被封顶的部分改给出战卡亲密度 +2",
+  chA1.crystals === 2 && chA1.capped === true && chA1.affection === 2 &&
+  a1.e.team[0].card.affection === 2);
+let a2 = chestState(3, 2);
+Gacha.ensureTrainer(a2.s).encounterCrystalsDay = "2026-11-17";
+Gacha.ensureTrainer(a2.s).encounterCrystalsToday = 98;
+a2.e.team[0].card.affection = 100;
+const chA2 = Encounter.settleChest(a2.e, a2.s, () => 0.9, DAY1);
+check("到上限：出战卡亲密度满 10 级、宝箱 +2 无效",
+  chA2.crystals === 2 && chA2.affection === 0 && a2.e.team[0].card.affection === 100);
+let a3 = chestState(3, 3);
+const chA3 = Encounter.settleChest(a3.e, a3.s, () => 0.9);
+check("没到上限：宝箱不转亲密度",
+  chA3.crystals === 6 && chA3.capped === false && chA3.affection === 0);
+
 // 14. 撤退：不挨打、按当前进度开宝箱
 const s9 = makeState();
 addCard(s9, 3, 50);
