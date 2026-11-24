@@ -153,7 +153,17 @@
         else if (e.mult < 1) line += " " + t("battleLogNotVery");
         break;
       }
-      if (e.t === "spawn") { line = t("battleLogSpawn", { name: logName(e), level: e.level }); break; }
+      // 每次事件后必定紧跟一次刷野（spawn）：事件文本是这场战斗的来由，战报优先显示它；
+      // 野生的名字和等级本来就在战斗屏上看得见，不丢信息；没有事件的普通战斗仍显示刷野行
+      if (e.t === "spawn") {
+        var prevEv = i > 0 ? enc.log[i - 1] : null;
+        if (prevEv && prevEv.t === "event") {
+          line = PokeMem.lang() === "en" ? (prevEv.textEn || prevEv.textZh) : (prevEv.textZh || prevEv.textEn);
+        } else {
+          line = t("battleLogSpawn", { name: logName(e), level: e.level });
+        }
+        break;
+      }
       if (e.t === "faint") { line = t("battleLogFaint", { name: logName(e) }); break; }
       if (e.t === "ko") { line = t("battleLogKo", { name: logName(e) }); break; }
       if (e.t === "catch") { line = e.success ? t("battleLogCatch", { name: logName(e) }) : t("battleLogCatchFail", { name: logName(e) }); break; }

@@ -333,14 +333,20 @@ sandbox.PokeMem.renderEncounter();
 check("事件屏：非战斗事件显示继续前进、不显示开始战斗",
   els["event-continue-btn"].style.display === "" && els["event-fight-btn"].style.display === "none");
 check("事件屏：结束按钮一直显示", els["event-end-btn"].style.display !== "none");
-// 战报：事件条目显示事件文本
+// 战报：事件后必定紧跟刷野，战报显示事件文本（不是刷野行）
 enc33.log = [{ t: "event", name: "训练师挑战", nameEn: "Trainer Battle",
   textZh: "路过的训练师向你挑战！胜 → 得 2 梦想结晶",
-  textEn: "A passing Trainer challenges you! Win to get 2 Dream Crystals." }];
+  textEn: "A passing Trainer challenges you! Win to get 2 Dream Crystals." },
+  { t: "spawn", id: 10, name: "绿毛虫", en: "Caterpie", level: 7 }];
 enc33.phase = "battle";
 sandbox.PokeMem.renderEncounter();
-check("战报：事件条目显示事件文本",
+check("战报：事件后刷野、显示事件文本",
   els["battle-log"].textContent.indexOf("2 梦想结晶") >= 0);
+// 战报：没有事件的普通战斗，仍显示刷野行
+enc33.log = [{ t: "spawn", id: 10, name: "绿毛虫", en: "Caterpie", level: 7 }];
+sandbox.PokeMem.renderEncounter();
+check("战报：无事件时仍显示刷野行",
+  els["battle-log"].textContent.indexOf("绿毛虫") >= 0 && els["battle-log"].textContent.indexOf("Lv.7") >= 0);
 // 结算屏：宝箱亲密度 +2 显示一行
 enc33.chest = { crystals: 0, items: [], capped: true, affection: 2 };
 enc33.phase = "done";
