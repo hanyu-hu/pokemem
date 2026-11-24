@@ -120,7 +120,7 @@
   // 各稀有度按它自己的有效等级（曲线与稀有楼层取高者）过滤候选，档内均匀抽一只。
   // 场景不存在、或该等级没有任何可选种时返回 null。
   // opts 可选（Task 31 事件用）：{ typeFilter（只出某属性）, minTier（稀有度下限）,
-  // maxTier（稀有度上限） }；上下限过滤后没有候选时回落到不过滤（保证总能刷出）。
+  // maxTier（稀有度上限） }；任一过滤后没有候选时回落到不过滤（保证总能刷出）。
   function spawnWild(sceneId, wins, teamMaxLevel, rng, opts) {
     rng = rng || Math.random;
     var scene = sceneById(sceneId);
@@ -133,19 +133,20 @@
     var tiers = Object.keys(band.weights);
     var minRank = opts && TIER_RANK[opts.minTier] != null ? TIER_RANK[opts.minTier] : 0;
     var maxRank = opts && TIER_RANK[opts.maxTier] != null ? TIER_RANK[opts.maxTier] : 99;
+    var typeFilter = opts && opts.typeFilter;
     function buildPool() {
       var pool = {};
       var totalWeight = 0;
       tiers.forEach(function (tier) {
         if (TIER_RANK[tier] < minRank || TIER_RANK[tier] > maxRank) return;
         var level = wildLevelFor(scene, wins, tier, teamMaxLevel);
-        var rows = eligibleSpecies(scene, level, opts && opts.typeFilter).filter(function (row) { return row[4] === tier; });
+        var rows = eligibleSpecies(scene, level, typeFilter).filter(function (row) { return row[4] === tier; });
         if (rows.length) { pool[tier] = { rows: rows, level: level }; totalWeight += band.weights[tier]; }
       });
       return { pool: pool, totalWeight: totalWeight };
     }
     var built = buildPool();
-    if (!built.totalWeight) { minRank = 0; maxRank = 99; built = buildPool(); } // 上下限卡死时回落
+    if (!built.totalWeight) { minRank = 0; maxRank = 99; typeFilter = null; built = buildPool(); } // 过滤卡死时回落
     var pool = built.pool;
     var totalWeight = built.totalWeight;
     if (!totalWeight) return null;

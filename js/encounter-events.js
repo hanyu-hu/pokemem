@@ -66,7 +66,7 @@
       text: { zh: "原地野餐休息，全队恢复了 25% 生命，出战卡亲密度 +1", en: "A picnic break! The whole team recovered 25% HP, +1 Affection on the active card." },
       fx: { healPct: 0.25, affection: 1 } },
     { id: "kind-nurse", zh: "好心的护士", en: "Kind Nurse", kind: "heal", scenes: null, weight: "uncommon",
-      text: { zh: "好心的护士帮了你一把", en: "A kind nurse helped you out." },
+      text: { zh: "好心的护士帮了你一把：有倒下的队员就复活到 50% HP，否则全队回 20%", en: "A kind nurse helped out: a fainted member revives at 50% HP — or the whole team recovers 20% if none fainted." },
       fx: { revive: 0.5, elseHealPct: 0.2 } },
     { id: "desert-oasis", zh: "沙漠绿洲", en: "Desert Oasis", kind: "heal", scenes: ["desert"], weight: "uncommon",
       text: { zh: "沙漠里的绿洲！全队 HP 回满了，得到 1 糖果", en: "An oasis in the desert! The whole team is fully healed, and you got 1 Candy." },
@@ -238,8 +238,10 @@
   }
   function applyFx(enc, state, fx, rng, now, result) {
     if (!fx) return;
-    if (fx.random) { // 森林蘑菇：50% 回血 / 50% 掉血
-      applyFx(enc, state, rng() < 0.5 ? fx.random[0] : fx.random[1], rng, now, result);
+    if (fx.random) { // 森林蘑菇：50% 回血 / 50% 掉血；result.branch 记 roll 到哪个分支（0/1），供界面显示
+      var branch = rng() < 0.5 ? 0 : 1;
+      result.branch = branch;
+      applyFx(enc, state, fx.random[branch], rng, now, result);
       return;
     }
     var mods = ensureMods(enc);
@@ -271,7 +273,9 @@
     if (typeof fx.hpPct === "number") enc.team.forEach(function (m) { hurtMember(m, fx.hpPct); });
     if (typeof fx.hpActivePct === "number" && active) hurtMember(active, fx.hpActivePct);
     if (typeof fx.hpRandomOnePct === "number" && enc.team.length) {
-      hurtMember(enc.team[Math.min(enc.team.length - 1, Math.floor(rng() * enc.team.length))], fx.hpRandomOnePct);
+      // 雪崩只砸还站着的队员（已倒下的再砸也没用）
+      var usable = usableMembers(enc);
+      if (usable.length) hurtMember(usable[Math.min(usable.length - 1, Math.floor(rng() * usable.length))], fx.hpRandomOnePct);
     }
     if (typeof fx.atkBonus === "number") mods.atkBonus += fx.atkBonus;
     if (typeof fx.critBonus === "number") mods.critBonus += fx.critBonus;
@@ -320,7 +324,8 @@
   }
   // 结算一个事件（非战斗类当场生效；战斗类只返回开打参数，战斗由 Task 32 接手）。
   // 返回 { event, kind, battle, textZh, textEn, awards, grantedCrystals, capped, levels,
-  //   needsPick（出战卡被事件打倒了，下一场要先选卡）, wiped（全队倒下） }。
+  //   branch（随机分支事件 roll 到哪个分支，0/1）, needsPick（出战卡被事件打倒了，下一场要先选卡）,
+  //   wiped（全队倒下） }。
   // 调用方负责保存存档（事件效果立即写进存档，刷新不丢，和每轮奖励一样）。
   function applyEvent(enc, state, event, rng, now) {
     rng = rng || Math.random;
@@ -335,10 +340,11 @@
       return result;
     }
     applyFx(enc, state, event.fx, rng, now, result);
-    // 文案里的 {n} 是实际发的结晶数（到上限前只发到一部分时和表里的数不一样）；
-    // 没结晶的事件文案里没有 {n}，传什么都不影响
-    result.textZh = eventText(event, "zh", result.grantedCrystals || undefined);
-    result.textEn = eventText(event, "en", result.grantedCrystals || undefined);
+    // 文案里的 {n} 是实际发的结晶数（到上限前只发到一部分时和表里的数不一样；
+    // 直接调用时已到上限发 0，n 就是 0，不留空）
+    var n = (event.fx && typeof event.fx.crystals === "number") ? result.grantedCrystals : undefined;
+    result.textZh = eventText(event, "zh", n);
+    result.textEn = eventText(event, "en", n);
     var active = enc.team && enc.team[enc.activeIndex];
     if (usableMembers(enc).length === 0) { result.wiped = true; }
     else if (active && active.hp <= 0) { enc.needsPick = true; result.needsPick = true; }

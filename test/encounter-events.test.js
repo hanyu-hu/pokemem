@@ -70,11 +70,11 @@ check("roll：rng 0 → 表里第一个草丛事件（路见不平）",
   Events.rollEvent(encRoll, sRoll, function () { return 0; }).id === "help-stranger");
 check("roll：rng 0.999 → 表里最后一个草丛事件（草丛里的蛋）",
   Events.rollEvent(encRoll, sRoll, function () { return 0.999; }).id === "grass-egg");
-// 城市事件权重合计 162，训练师挑战占 [10, 20)：rng 15/162 落在里面
+// 城市事件权重合计 152（1 人队时难走的道路不在候选里），训练师挑战占 [10, 20)：rng 15/152 落在里面
 const sCap = makeState();
 addCard(sCap, 1, 50);
 const encCap = makeEnc(sCap, "city", [{ speciesId: 1, cardIndex: 0 }]);
-const duelRng = function () { return 15 / 162; };
+const duelRng = function () { return 15 / 152; };
 check("roll：没到上限时 roll 到训练师挑战",
   Events.rollEvent(encCap, sCap, duelRng).id === "trainer-duel");
 const tCap = Gacha.ensureTrainer(sCap);
@@ -82,6 +82,18 @@ tCap.encounterCrystalsDay = Gacha.encounterDayKey(new Date(2026, 10, 23));
 tCap.encounterCrystalsToday = 100;
 check("roll：到上限时给结晶的事件替换成流星",
   Events.rollEvent(encCap, sCap, duelRng, new Date(2026, 10, 23)).id === "meteor");
+// 掉钱包占 [115, 125)：rng 120/152 落在里面（直接给结晶的事件也要能替换）
+const walletRng = function () { return 120 / 152; };
+const sCap2 = makeState();
+addCard(sCap2, 1, 50);
+const encCap2 = makeEnc(sCap2, "city", [{ speciesId: 1, cardIndex: 0 }]);
+check("roll：没到上限时 roll 到掉钱包",
+  Events.rollEvent(encCap2, sCap2, walletRng).id === "lost-wallet");
+const tCap2 = Gacha.ensureTrainer(sCap2);
+tCap2.encounterCrystalsDay = Gacha.encounterDayKey(new Date(2026, 10, 23));
+tCap2.encounterCrystalsToday = 100;
+check("roll：到上限时直接给结晶的事件也替换成流星",
+  Events.rollEvent(encCap2, sCap2, walletRng, new Date(2026, 10, 23)).id === "meteor");
 check("封顶判断：今天 100 = 到上限，明天 = 没到",
   Events.isCappedToday(sCap, new Date(2026, 10, 23)) === true &&
   Events.isCappedToday(sCap, new Date(2026, 10, 24)) === false);
@@ -204,12 +216,12 @@ const hpMax0 = encRand.team[0].hpMax;
 // 掉血按当前 HP 算：蘑菇回血后 95 血，掉 15% → floor(95×0.85)=80；
 // 沙暴再掉 15% → floor(80×0.85)=68；陷阱 100 血 -30% → 70；雪崩减半 → 35
 const hpAfterHeal = 50 + Math.round(hpMax0 * 0.3);
-Events.applyEvent(encRand, sRand, Events.eventById("forest-mushroom"), function () { return 0; });
-check("蘑菇：rng 0 → 回 30%",
-  encRand.team[0].hp === hpAfterHeal);
-Events.applyEvent(encRand, sRand, Events.eventById("forest-mushroom"), function () { return 0.99; });
-check("蘑菇：rng 0.99 → 掉 15%（按当前 HP）",
-  encRand.team[0].hp === Math.floor(hpAfterHeal * 0.85));
+const mushRes1 = Events.applyEvent(encRand, sRand, Events.eventById("forest-mushroom"), function () { return 0; });
+check("蘑菇：rng 0 → 回 30%、分支记 0",
+  encRand.team[0].hp === hpAfterHeal && mushRes1.branch === 0);
+const mushRes2 = Events.applyEvent(encRand, sRand, Events.eventById("forest-mushroom"), function () { return 0.99; });
+check("蘑菇：rng 0.99 → 掉 15%（按当前 HP）、分支记 1",
+  encRand.team[0].hp === Math.floor(hpAfterHeal * 0.85) && mushRes2.branch === 1);
 const sandRes = Events.applyEvent(encRand, sRand, Events.eventById("sandstorm"), function () { return 0; });
 check("沙暴：全队 -15% 且野生等级 +2",
   encRand.team[0].hp === Math.floor(Math.floor(hpAfterHeal * 0.85) * 0.85) &&
@@ -258,6 +270,15 @@ encPick.team[0].hp = 1;
 const pickRes = Events.applyEvent(encPick, sPick, Events.eventById("trap"), function () { return 0; });
 check("陷阱：出战卡倒了、队友还在 → needsPick、不 wipe",
   pickRes.needsPick === true && pickRes.wiped === false && encPick.needsPick === true);
+
+// 12. 雪崩只砸还站着的队员（已倒下的再砸也没用）
+const sAval = makeState();
+addCard(sAval, 1, 50); addCard(sAval, 4, 50);
+const encAval = makeEnc(sAval, "glacier", [{ speciesId: 1, cardIndex: 0 }, { speciesId: 4, cardIndex: 0 }]);
+encAval.team[0].hp = 0; encAval.team[1].hp = 100;
+Events.applyEvent(encAval, sAval, Events.eventById("avalanche"), function () { return 0; });
+check("雪崩：第一只已倒下 → 砸第二只，HP 减半",
+  encAval.team[0].hp === 0 && encAval.team[1].hp === 50);
 
 console.log(failures === 0 ? "\n全部通过 ✅" : "\n失败 " + failures + " 项 ❌");
 process.exit(failures === 0 ? 0 : 1);

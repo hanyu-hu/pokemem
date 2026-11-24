@@ -36,7 +36,7 @@
 
   // 伤害 = max(1, round(攻击 × 克制倍率 / 3))，暴击时再 ×2；/ 3 是调参旋钮
   var DAMAGE_DIVISOR = 3;
-  var DAILY_CRYSTAL_CAP = 100; // 遭遇战结晶每日上限（用户定 2026-11-17：100/天）
+  var DAILY_CRYSTAL_CAP = Gacha.DAILY_CRYSTAL_CAP; // 转发：上限以 gacha.js 为准（Task 31 统一）
   var BALL_MULT = { poke_ball: 1, great_ball: 1.5, ultra_ball: 2 };
   var TIER_CATCH_MULT = { N: 1, R: 1, SR: 0.85, SSR: 0.7, UR: 0.5, MR: 0.35 };
   // 宝箱道具池：除大师球外的 8 种（3 种球 + 5 种石头）
@@ -259,30 +259,25 @@
   // 宝箱结算：结晶 = 击倒数 + 高等级胜利数（击倒每只 +1；高等级胜利额外 +1，
   // 高等级胜利含抓到——所以高等级抓到给 +1，但抓到本身不给基础结晶）；
   // 道具：高等级胜利 ≥ 3 时 30% 得 1 个随机道具，≥ 5 时 60%。只结算一次。
-  // 每日结晶计数用的本地日期 key（"2026-11-17"）；now 可传 Date 或时间戳，默认现在
-  function encounterDayKey(now) {
-    var d = now == null ? new Date() : new Date(now);
-    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
-  }
+  // 每日结晶计数用的本地日期 key（"2026-11-17"）；以 gacha.js 为准（Task 31 统一）
+  var encounterDayKey = Gacha.encounterDayKey;
   function settleChest(enc, state, rng, now) {
     if (enc.phase === "done") return enc.chest;
     var trainer = Gacha.ensureTrainer(state);
     var wanted = enc.kos + enc.highLevelWins;
-    // 每日上限 100：跨天先清零，再按剩余额度发；道具 roll 不受结晶上限影响
-    var today = encounterDayKey(now);
-    if (trainer.encounterCrystalsDay !== today) { trainer.encounterCrystalsDay = today; trainer.encounterCrystalsToday = 0; }
-    var granted = Math.min(wanted, Math.max(0, DAILY_CRYSTAL_CAP - trainer.encounterCrystalsToday));
-    trainer.encounterCrystalsToday += granted;
+    // 每日上限 100：走 Gacha.grantEncounterCrystals（跨天清零、按剩余额度发）；
+    // 道具 roll 不受结晶上限影响
+    var grant = Gacha.grantEncounterCrystals(state, wanted, now);
+    var granted = grant.granted;
     var items = [];
     var odds = enc.highLevelWins >= 5 ? 0.6 : enc.highLevelWins >= 3 ? 0.3 : 0;
     if (odds > 0 && rng() < odds) {
       items.push(CHEST_ITEM_POOL[Math.min(CHEST_ITEM_POOL.length - 1, Math.floor(rng() * CHEST_ITEM_POOL.length))]);
     }
-    trainer.crystals += granted;
     items.forEach(function (id) { trainer.items[id] = (trainer.items[id] || 0) + 1; });
-    enc.chest = { crystals: granted, items: items, capped: granted < wanted };
+    enc.chest = { crystals: granted, items: items, capped: grant.capped };
     enc.phase = "done";
-    log(enc, { t: "chest", crystals: granted, items: items, capped: granted < wanted });
+    log(enc, { t: "chest", crystals: granted, items: items, capped: grant.capped });
     return enc.chest;
   }
   // 撤退：立刻离开遭遇战并开宝箱结算（按当前进度），野生不攻击
