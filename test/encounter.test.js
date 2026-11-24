@@ -450,7 +450,7 @@ bt1.encounterCrystalsToday = 100;
 Encounter.nextStep(b1.e, b1.s, seq32([0.1, 0.5, 0.1]));
 Encounter.startEventBattle(b1.e, b1.s, () => 0);
 b1.e.wild.hp = 1;
-const br1 = Encounter.attack(b1.e, b1.s, noCrit);
+const br1 = Encounter.attack(b1.e, b1.s, noCrit, new Date(2026, 10, 23)); // 固定日期：战利品按 11-23 这天算上限
 check("战利品封顶：到上限时 2 结晶发 0、改亲密度 +1",
   br1.bonus && br1.bonus.crystals === 0 && br1.bonus.affection === 1 &&
   b1.e.team[0].card.affection === 3); // 第一场胜 +1，决斗胜 +1，转换 +1
@@ -462,7 +462,7 @@ b2.e.team[0].card.affection = 100;
 Encounter.nextStep(b2.e, b2.s, seq32([0.1, 0.5, 0.1]));
 Encounter.startEventBattle(b2.e, b2.s, () => 0);
 b2.e.wild.hp = 1;
-const br2 = Encounter.attack(b2.e, b2.s, noCrit);
+const br2 = Encounter.attack(b2.e, b2.s, noCrit, new Date(2026, 10, 23)); // 固定日期：战利品按 11-23 这天算上限
 check("战利品封顶：亲密度满 10 级、转换无效",
   br2.bonus && br2.bonus.crystals === 0 && !br2.bonus.affection);
 // 17f. 事件屏上继续 / 结束

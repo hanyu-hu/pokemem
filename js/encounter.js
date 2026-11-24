@@ -301,7 +301,8 @@
   // 攻击：野生等级 > 出战等级时野生先攻；若出战卡被这一击打倒，本次攻击打不出来。
   // 野生每回合最多攻击一次（先攻就是它的那次攻击；玩家先攻时它是反击）。
   // 先手修正值（Task 32）：forceWildFirstNext > forceFirstNext > 等级规则
-  function attack(enc, state, rng) {
+  // now 可传（Date 或时间戳，测试用），透传给 winRound（战利品发结晶要按天算上限）
+  function attack(enc, state, rng, now) {
     if (enc.phase !== "battle") return { ok: false, error: "notInBattle" };
     if (enc.needsPick) return { ok: false, error: "needPick" };
     var active = activeMember(enc);
@@ -313,7 +314,7 @@
     if (wildFirst && wildAttack(enc, rng)) { afterFaint(enc, state, rng, result); return result; }
     if (playerAttack(enc, rng)) {
       result.wildFainted = true;
-      var wr = winRound(enc, state, "ko", rng);
+      var wr = winRound(enc, state, "ko", rng, now);
       if (wr.arena) result.arena = true;
       else result.prompt = true;
       result.bonus = wr.bonus;
@@ -350,7 +351,8 @@
   // 不加入本场队伍；超上限按抽卡老规则，最弱的出局换糖果）；失败则球消耗掉，野生反击。
   // 注意：抓到那张卡若是队伍里某张卡的同种、且那张卡正好是 6 张里等级最低的，
   // 队伍引用的对象会被移出卡册（引用本身还在，本场能继续打，但它的经验结算不再进存档）——极少见，接受。
-  function useBall(enc, state, rng, ballId) {
+  // now 可传（Date 或时间戳，测试用），透传给 winRound（战利品发结晶要按天算上限）
+  function useBall(enc, state, rng, ballId, now) {
     if (enc.phase !== "battle") return { ok: false, error: "notInBattle" };
     if (enc.needsPick) return { ok: false, error: "needPick" };
     if (BALL_MULT[ballId] == null) return { ok: false, error: "badBall" };
@@ -369,7 +371,7 @@
         tier: wild.tier, prob: wild.prob, level: wild.level, hp: wild.baseHp, atk: wild.atk, exp: 0, affection: 0 });
       enc.catches += 1;
       result.caught = true;
-      var wr = winRound(enc, state, "catch", rng);
+      var wr = winRound(enc, state, "catch", rng, now);
       if (wr.arena) result.arena = true;
       else result.prompt = true;
       result.bonus = wr.bonus;
@@ -445,6 +447,7 @@
     }
     spawnNextWild(enc, rng);
     if (!enc.wild) return { ok: false, error: "noWild" };
+    enc.event = null; // 上一个事件已结束（O4：不留过期引用）
     enc.phase = "battle";
     return { ok: true, phase: "battle", wild: enc.wild };
   }
