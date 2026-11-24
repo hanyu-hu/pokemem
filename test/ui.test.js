@@ -205,6 +205,8 @@ check("战斗动画：前冲/受击/倒下/弹出/飘字/球弧线/晃动/星星
 check("战斗动画只读 log、不改状态（play 按 log 长度 diff、动画不拖逻辑）",
   battleAnimJs.includes("enc.log.slice(lastLen)") && battleAnimJs.includes("PokeMem.BattleAnim") &&
   encUiJs.includes("PokeMem.BattleAnim.play(enc)"));
+check("战斗动画：球飞过去后定格在野生处（ball-throw 带 forwards，不闪回）",
+  css.includes("ball-throw .45s ease-out forwards"));
 check("战斗动画也尊重 reduced-motion",
   css.includes("prefers-reduced-motion") && css.includes(".battle-ball"));
 check("会动的图：场景轨道转圈、图标反向转（始终正着）、地形图轻浮、悬停摇摆、选中脉冲、云朵飘、球里宝可梦轻浮",

@@ -312,8 +312,8 @@ button { font-family: inherit; }
 .anim-dmg { animation: dmg-float .8s ease-out forwards; }
 .anim-sparkle { color: #f5a623; animation: sparkle-pop .9s ease 1s forwards; }
 .anim-burst { color: #e3350d; animation: burst-pop .45s ease 1s forwards; }
-.anim-ball-catch { display: block; animation: ball-throw .45s ease-out, ball-wobble .18s ease-in-out .45s 3, ball-caught .35s ease-in 1s forwards; }
-.anim-ball-fail { display: block; animation: ball-throw .45s ease-out, ball-wobble .18s ease-in-out .45s 3, ball-burst .3s ease-in 1s forwards; }
+.anim-ball-catch { display: block; animation: ball-throw .45s ease-out forwards, ball-wobble .18s ease-in-out .45s 3, ball-caught .35s ease-in 1s forwards; }
+.anim-ball-fail { display: block; animation: ball-throw .45s ease-out forwards, ball-wobble .18s ease-in-out .45s 3, ball-burst .3s ease-in 1s forwards; }
 @keyframes lunge-left { 0% { transform: translateX(0); } 40% { transform: translateX(-12px); } 100% { transform: translateX(0); } }
 @keyframes lunge-right { 0% { transform: translateX(0); } 40% { transform: translateX(12px); } 100% { transform: translateX(0); } }
 @keyframes hit-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 50% { transform: translateX(4px); } 75% { transform: translateX(-3px); } }
@@ -330,7 +330,7 @@ button { font-family: inherit; }
 @keyframes ball-caught { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(.2); opacity: 0; } }
 @keyframes ball-burst { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .battle-side img, .battle-dmg, .battle-fx, .battle-ball, .hp-ghost { animation: none !important; transition: none !important; }
+  .battle-side img, .battle-dmg, .battle-fx, .battle-ball, .hp-ghost, .hp-fill { animation: none !important; transition: none !important; }
 }
 .trainer-rename { display: flex; gap: 8px; margin-top: 12px; }
 .trainer-rename input { flex: 1; min-width: 0; padding: 10px 16px; font-size: 15px; border: 1px solid #f0c9c0; border-radius: 999px; outline: none; }

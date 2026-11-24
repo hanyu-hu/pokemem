@@ -64,7 +64,9 @@ function freshEnc() {
   const enc = freshEnc();
   enc.log.push({ t: "spawn", id: 10, name: "绿毛虫", en: "Caterpie", level: 5 });
   BattleAnim.play(enc);
-  check("首次 play 只同步基线、不碰 DOM", Object.keys(els).length === 0);
+  check("首次 play 只同步基线、不播动画（但会清掉残留动作 class）",
+    !els["battle-wild-img"].classList.contains("anim-pop") &&
+    !els["battle-mine-img"].classList.contains("anim-pop"));
 
   // 我方攻击：野生抖+闪红、我方前冲、飘 -33、残影 100%→67%
   enc.log.push({ t: "hit", by: "player", attacker: "妙蛙种子", defender: "绿毛虫", damage: 33, crit: false, mult: 1, defHp: 67, defHpMax: 100 });
@@ -91,6 +93,49 @@ function freshEnc() {
   check("野生打：我方抖+闪红", els["battle-mine-img"].classList.contains("anim-hit"));
   check("野生打：野生前冲（anim-lunge-wild）", els["battle-wild-img"].classList.contains("anim-lunge-wild"));
   check("野生打：飘 -12 到我方", els["battle-mine-dmg"].textContent === "-12");
+
+  // [hit, hit] 批次（F1）：标准双向交锋，每侧最终只剩最新动作的 class
+  BattleAnim.reset();
+  const encH = freshEnc();
+  BattleAnim.play(encH); // 同步基线
+  encH.log.push({ t: "hit", by: "player", damage: 20, crit: false, mult: 1, defHp: 80, defHpMax: 100 });
+  encH.log.push({ t: "hit", by: "wild", damage: 12, crit: false, mult: 1, defHp: 68, defHpMax: 100 });
+  encH.wild.hp = 80;
+  encH.team[0].hp = 68;
+  BattleAnim.play(encH);
+  check("[hit, hit]：我方最终只剩受击（最新动作），前冲被清掉",
+    els["battle-mine-img"].classList.contains("anim-hit") && !els["battle-mine-img"].classList.contains("anim-lunge-mine"));
+  check("[hit, hit]：野生最终只剩前冲（最新动作），受击被清掉",
+    els["battle-wild-img"].classList.contains("anim-lunge-wild") && !els["battle-wild-img"].classList.contains("anim-hit"));
+  check("[hit, hit]：两侧伤害数字都在",
+    els["battle-wild-dmg"].textContent === "-20" && els["battle-mine-dmg"].textContent === "-12");
+
+  // [hit, ko, levelup] 批次（F1）：一击必杀 + 升级，每侧最终只剩终结动作
+  BattleAnim.reset();
+  const encK = freshEnc();
+  BattleAnim.play(encK);
+  encK.log.push({ t: "hit", by: "player", damage: 100, crit: false, mult: 1, defHp: 0, defHpMax: 100 });
+  encK.log.push({ t: "ko", name: "绿毛虫", nameEn: "Caterpie" });
+  encK.log.push({ t: "levelup", name: "妙蛙种子", nameEn: "Bulbasaur", from: 5, to: 6 });
+  encK.wild = null;
+  els["battle-wild-img"].style.display = "none";
+  BattleAnim.play(encK);
+  check("[hit, ko, levelup]：野生最终只剩倒下",
+    els["battle-wild-img"].classList.contains("anim-faint") && !els["battle-wild-img"].classList.contains("anim-hit"));
+  check("[hit, ko, levelup]：我方最终只剩升级金光、前冲被清掉",
+    els["battle-mine-img"].classList.contains("anim-levelup") && !els["battle-mine-img"].classList.contains("anim-lunge-mine"));
+
+  // F3：团灭后开新局，我方图上的倒下 class 在基线同步时就清掉（不是等第一次攻击）
+  BattleAnim.reset();
+  const encF = freshEnc();
+  BattleAnim.play(encF);
+  encF.log.push({ t: "faint", name: "妙蛙种子", nameEn: "Bulbasaur" });
+  encF.team[0].hp = 0;
+  BattleAnim.play(encF);
+  check("F3 前置：我方倒下挂上 anim-faint", els["battle-mine-img"].classList.contains("anim-faint"));
+  const encF2 = freshEnc(); // 新遭遇战：新 enc 对象
+  BattleAnim.play(encF2); // 走基线同步
+  check("F3：新开局同步基线时清掉上局的倒下 class", !els["battle-mine-img"].classList.contains("anim-faint"));
 
   // 打倒：同一批 [hit, ko]，终结动画优先于抖动；图先亮回来、播完藏回去
   BattleAnim.reset();
