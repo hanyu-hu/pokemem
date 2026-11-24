@@ -130,16 +130,28 @@ check("树果丛：全队回 30% 最大 HP + 1 糖果",
   Gacha.ensureTrainer(sHeal).candy === 1);
 check("树果丛文案：中文有 30%、英文有 30%",
   healRes.textZh.indexOf("30%") >= 0 && healRes.textEn.indexOf("30%") >= 0);
-encHeal.team[0].hp = 5;
+// F2（用户定 2026-11-23）：只有宝可梦中心/绿洲能复活，其他回血只治还站着的
+encHeal.team[1].hp = 0;
+var hp0Before = encHeal.team[0].hp;
+Events.applyEvent(encHeal, sHeal, Events.eventById("berry-bush"), function () { return 0; });
+check("树果丛：倒下的不复活，站着的照常回血",
+  encHeal.team[1].hp === 0 &&
+  encHeal.team[0].hp === Math.min(encHeal.team[0].hpMax, hp0Before + Math.round(encHeal.team[0].hpMax * 0.3)));
 Events.applyEvent(encHeal, sHeal, Events.eventById("pokemon-center"), function () { return 0; });
-check("宝可梦中心：全队回满", encHeal.team.every(function (m) { return m.hp === m.hpMax; }));
+check("宝可梦中心：倒下的也复活回满", encHeal.team.every(function (m) { return m.hp === m.hpMax; }));
+encHeal.team[0].hp = 0; encHeal.team[1].hp = 0;
+Events.applyEvent(encHeal, sHeal, Events.eventById("desert-oasis"), function () { return 0; });
+check("沙漠绿洲：随机复活一只（rng 0 → 第一只），另一只还倒着，+ 1 糖果",
+  encHeal.team[0].hp === encHeal.team[0].hpMax && encHeal.team[1].hp === 0 &&
+  Gacha.ensureTrainer(sHeal).candy === 3);
+encHeal.team[0].hp = 5;
 encHeal.team[1].hp = 0;
 const nurseRes = Events.applyEvent(encHeal, sHeal, Events.eventById("kind-nurse"), function () { return 0; });
 check("好心的护士：倒下的复活到 50%",
   encHeal.team[1].hp === Math.floor(encHeal.team[1].hpMax * 0.5));
 const nurseRes2 = Events.applyEvent(encHeal, sHeal, Events.eventById("kind-nurse"), function () { return 0; });
 check("好心的护士：没人倒下时全队回 20% 最大 HP",
-  encHeal.team[0].hp === encHeal.team[0].hpMax &&
+  encHeal.team[0].hp === 5 + Math.round(encHeal.team[0].hpMax * 0.2) &&
   encHeal.team[1].hp === Math.floor(encHeal.team[1].hpMax * 0.5) + Math.round(encHeal.team[1].hpMax * 0.2) &&
   nurseRes2.needsPick === false);
 

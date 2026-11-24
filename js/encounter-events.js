@@ -54,8 +54,8 @@
       battle: { levelBonus: 5, bonus: { crystals: 3 } } },
     // ---- 回复类（6 种） ----
     { id: "pokemon-center", zh: "宝可梦中心", en: "Pokémon Center", kind: "heal", scenes: ["city"], weight: "uncommon",
-      text: { zh: "宝可梦中心！全队 HP 回满了", en: "A Pokémon Center! The whole team is fully healed." },
-      fx: { healFull: true } },
+      text: { zh: "宝可梦中心！全队 HP 回满了（倒下的也复活）", en: "A Pokémon Center! The whole team is fully healed — fainted members revive too." },
+      fx: { healFull: true, reviveAll: true } },
     { id: "hot-spring", zh: "温泉", en: "Hot Spring", kind: "heal", scenes: ["glacier", "stream"], weight: "uncommon",
       text: { zh: "泡了个温泉，全队恢复了 50% 生命", en: "A relaxing hot spring! The whole team recovered 50% HP." },
       fx: { healPct: 0.5 } },
@@ -69,8 +69,8 @@
       text: { zh: "好心的护士帮了你一把：有倒下的队员就复活到 50% HP，否则全队回 20%", en: "A kind nurse helped out: a fainted member revives at 50% HP — or the whole team recovers 20% if none fainted." },
       fx: { revive: 0.5, elseHealPct: 0.2 } },
     { id: "desert-oasis", zh: "沙漠绿洲", en: "Desert Oasis", kind: "heal", scenes: ["desert"], weight: "uncommon",
-      text: { zh: "沙漠里的绿洲！全队 HP 回满了，得到 1 糖果", en: "An oasis in the desert! The whole team is fully healed, and you got 1 Candy." },
-      fx: { healFull: true, candy: 1 } },
+      text: { zh: "沙漠里的绿洲！全队 HP 回满了（有倒下的队员就随机复活一只），得到 1 糖果", en: "An oasis in the desert! The whole team is fully healed (a fainted member revives at random, if any), and you got 1 Candy." },
+      fx: { healFull: true, reviveOne: true, candy: 1 } },
     // ---- 增益类（9 种） ----
     { id: "kind-mentor", zh: "好心人指导", en: "Kind Mentor", kind: "buff", scenes: null, weight: "uncommon",
       text: { zh: "好心人指点了你的宝可梦，本次遭遇战全队攻击 +5", en: "A kind mentor coached your team! +5 Attack for the whole team this encounter." },
@@ -247,8 +247,18 @@
     var mods = ensureMods(enc);
     var trainer = Gacha.ensureTrainer(state);
     var active = enc.team && enc.team[enc.activeIndex];
-    if (fx.healFull) enc.team.forEach(function (m) { m.hp = m.hpMax; });
-    if (typeof fx.healPct === "number") enc.team.forEach(function (m) { healMember(m, fx.healPct); });
+    // 回血规则（用户定 2026-11-23，F2）：只治还站着的队员；宝可梦中心例外（reviveAll），
+    // 倒下的也复活（原作里中心本来就能复活）；绿洲例外是 reviveOne：随机复活一只倒下的（回满）。
+    // 护士事件的复活是另一条路，不受这条限制。
+    if (fx.healFull) enc.team.forEach(function (m) { if (fx.reviveAll || m.hp > 0) m.hp = m.hpMax; });
+    if (typeof fx.healPct === "number") enc.team.forEach(function (m) { if (m.hp > 0) healMember(m, fx.healPct); });
+    if (fx.reviveOne) {
+      var faintedOne = enc.team.filter(function (m) { return m.hp <= 0; });
+      if (faintedOne.length) {
+        var pickOne = faintedOne[Math.min(faintedOne.length - 1, Math.floor(rng() * faintedOne.length))];
+        pickOne.hp = pickOne.hpMax;
+      }
+    }
     if (typeof fx.revive === "number") {
       var fainted = enc.team.filter(function (m) { return m.hp <= 0; });
       if (fainted.length) {
